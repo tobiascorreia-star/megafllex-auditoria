@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MegaFllex Auditoria</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  /* ── RESET & BASE ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --bg2: #f5f5f3; --bg3: #eeede8;
+    --txt: #1a1a18; --txt2: #6b6b67; --txt3: #9c9a92;
+    --brd: rgba(0,0,0,0.12); --brd2: rgba(0,0,0,0.22);
+    --radius: 8px; --radius-lg: 12px;
+    --mega: #EEEDFE; --mega-brd: #AFA9EC; --mega-txt: #3C3489; --mega-sub: #534AB7;
+    --prop: #FFF3CD; --prop-brd: #E6A817; --prop-txt: #7A5000;
+    --oper: #FFD6D6; --oper-brd: #D85A30; --oper-txt: #7A1A1A;
+    --pos: #1D9E75; --neg: #D85A30;
+    --ok-bg: #EAF3DE; --ok-txt: #3B6D11;
+    --diff-bg: #FAECE7; --diff-txt: #993C1D;
+    --warn-bg: #FFF3CD; --warn-txt: #7A5000;
+    --danger-bg: #FAECE7; --danger-txt: #993C1D;
+    --info-bg: #E6F1FB; --info-txt: #185FA5;
+    --mono: 'Courier New', monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a; --bg2: #252523; --bg3: #2e2e2b;
+      --txt: #e8e6de; --txt2: #9c9a92; --txt3: #6b6b67;
+      --brd: rgba(255,255,255,0.12); --brd2: rgba(255,255,255,0.22);
+    }
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; color: var(--txt); background: var(--bg3); min-height: 100vh; }
+
+  /* ── LAYOUT ── */
+  .app { max-width: 780px; margin: 0 auto; padding: 12px; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+  .card { background: var(--bg); border: 0.5px solid var(--brd); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 12px; }
+  .inner { padding: 0 14px 14px; }
+
+  /* ── TOPBAR ── */
+  .topbar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 0.5px solid var(--brd); }
+  .topbar-info { flex: 1; min-width: 0; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+  .av-mega { background: var(--mega); color: var(--mega-txt); }
+  .av-emp  { background: var(--prop); color: var(--prop-txt); }
+  .av-fil  { background: var(--oper); color: var(--oper-txt); }
+
+  /* ── BOTÕES ── */
+  .btn { padding: 8px 14px; border-radius: var(--radius); border: 0.5px solid var(--brd2); background: var(--bg2); cursor: pointer; font-size: 13px; font-weight: 500; color: var(--txt); touch-action: manipulation; font-family: inherit; }
+  .btn:hover { background: var(--bg3); }
+  .btn:active { transform: scale(0.98); }
+  .btn-danger { padding: 8px 14px; border-radius: var(--radius); border: 0.5px solid var(--oper-brd); background: var(--oper); cursor: pointer; font-size: 13px; font-weight: 500; color: var(--oper-txt); font-family: inherit; }
+  .btn-sm { padding: 5px 9px; border-radius: var(--radius); border: 0.5px solid var(--brd); background: none; cursor: pointer; font-size: 12px; color: var(--txt2); font-family: inherit; }
+  .btn-sm:hover { background: var(--bg2); }
+  .btn-sair { display: flex; align-items: center; gap: 5px; padding: 6px 10px; border-radius: var(--radius); border: 0.5px solid var(--brd2); background: var(--bg2); cursor: pointer; font-size: 11px; color: var(--txt2); white-space: nowrap; flex-shrink: 0; font-family: inherit; }
+
+  /* ── TABS ── */
+  .tab-bar { display: flex; gap: 5px; margin-bottom: 12px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab { padding: 5px 11px; border-radius: var(--radius); border: 0.5px solid var(--brd); font-size: 12px; cursor: pointer; background: var(--bg); color: var(--txt2); white-space: nowrap; flex-shrink: 0; font-family: inherit; }
+  .tab.active { background: var(--bg2); color: var(--txt); font-weight: 500; }
+
+  /* ── FORM ── */
+  .irow { display: flex; flex-direction: column; gap: 3px; margin-bottom: 9px; }
+  .irow label { font-size: 11px; color: var(--txt2); font-weight: 500; }
+  .irow input, .irow select, .irow textarea { padding: 8px 10px; border: 0.5px solid var(--brd2); border-radius: var(--radius); background: var(--bg); color: var(--txt); font-size: 14px; width: 100%; font-family: inherit; -webkit-appearance: none; }
+  .irow input:focus, .irow select:focus, .irow textarea:focus { outline: none; border-color: var(--mega-sub); }
+  .input-brl { position: relative; }
+  .input-brl .prefix { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--txt2); pointer-events: none; }
+  .input-brl input { padding-left: 32px !important; }
+
+  /* ── GRIDS ── */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 12px; }
+  @media(max-width:500px) { .grid2{grid-template-columns:1fr} .grid3{grid-template-columns:1fr} .grid4{grid-template-columns:1fr 1fr} }
+
+  /* ── TABELA ── */
+  .tbl-wrap { border: 0.5px solid var(--brd); border-radius: var(--radius); overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 480px; }
+  th { background: var(--bg2); color: var(--txt2); font-weight: 500; padding: 7px 9px; text-align: right; border-bottom: 0.5px solid var(--brd); font-size: 10px; white-space: nowrap; }
+  th:first-child { text-align: left; position: sticky; left: 0; z-index: 2; background: var(--bg2); }
+  td { padding: 7px 9px; border-bottom: 0.5px solid var(--brd); text-align: right; white-space: nowrap; }
+  td:first-child { text-align: left; font-weight: 500; position: sticky; left: 0; z-index: 1; background: var(--bg); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg2); }
+  tr:hover td:first-child { background: var(--bg2); }
+  .total-row td { background: var(--bg2) !important; font-weight: 500; border-top: 0.5px solid var(--brd2); }
+  .cel-prop { background: #FFF3CD !important; border-bottom: 2px solid #E6A817 !important; }
+  .cel-oper { background: #FFD6D6 !important; border-bottom: 2px solid #D85A30 !important; }
+
+  /* ── BADGES & NOTICES ── */
+  .badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: var(--radius); font-size: 10px; font-weight: 500; }
+  .b-ok   { background: var(--ok-bg);   color: var(--ok-txt); }
+  .b-diff { background: var(--diff-bg); color: var(--diff-txt); }
+  .b-prop { background: var(--prop);    color: var(--prop-txt); border: 0.5px solid var(--prop-brd); }
+  .b-oper { background: var(--oper);    color: var(--oper-txt); border: 0.5px solid var(--oper-brd); }
+  .notice { border-radius: var(--radius); padding: 8px 10px; font-size: 11px; margin-bottom: 10px; display: flex; gap: 6px; align-items: flex-start; line-height: 1.5; }
+  .n-mega { background: var(--mega); color: var(--mega-txt); }
+  .n-warn { background: var(--warn-bg); color: var(--warn-txt); }
+  .n-oper { background: var(--oper); color: var(--oper-txt); }
+  .n-info { background: var(--info-bg); color: var(--info-txt); }
+  .n-danger { background: var(--danger-bg); color: var(--danger-txt); }
+
+  /* ── MISC ── */
+  .sect { font-size: 11px; font-weight: 500; color: var(--txt2); margin: 12px 0 6px; text-transform: uppercase; letter-spacing: .04em; }
+  .pos { color: var(--pos); font-weight: 500; }
+  .neg { color: var(--neg); font-weight: 500; }
+  .neu { color: var(--txt2); }
+  .metric { border-radius: var(--radius); padding: .85rem 1rem; text-align: center; }
+  .metric .lbl { font-size: 11px; margin-bottom: 3px; }
+  .metric .val { font-size: 18px; font-weight: 500; }
+  .grupo-titulo { font-size: 10px; font-weight: 500; color: var(--txt2); background: var(--bg2); padding: 4px 9px; border-radius: var(--radius); margin: 10px 0 5px; }
+  .campo-tag { display: inline-flex; align-items: center; gap: 4px; background: var(--bg2); border: 0.5px solid var(--brd); border-radius: var(--radius); padding: 3px 8px; font-size: 11px; margin: 2px; }
+  .campo-tag button { border: none; background: none; cursor: pointer; color: var(--txt3); font-size: 13px; line-height: 1; padding: 0; }
+  .emp-card { border: 0.5px solid var(--brd); border-radius: var(--radius-lg); padding: 12px; margin-bottom: 7px; background: var(--bg); }
+  .emp-card:hover { background: var(--bg2); }
+  .legenda { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .leg-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--txt2); }
+  .leg-box { width: 20px; height: 13px; border-radius: 2px; border-bottom: 2px solid; flex-shrink: 0; }
+  .audit-card { border: 0.5px solid var(--brd); border-radius: var(--radius-lg); padding: 10px 12px; margin-bottom: 8px; }
+  .col-change { display: flex; align-items: center; gap: 6px; padding: 5px 9px; border-radius: var(--radius); background: var(--bg2); font-size: 11px; margin-bottom: 4px; flex-wrap: wrap; }
+  .col-name { font-weight: 500; min-width: 100px; }
+  .rodape { text-align: center; padding: 10px 0 4px; font-size: 10px; color: var(--txt3); border-top: 0.5px solid var(--brd); margin-top: 6px; }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--brd2); border-top-color: var(--mega-sub); border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── LOGIN ── */
+  .login-wrap { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1rem; }
+  .login-card { background: var(--bg); border: 0.5px solid var(--brd); border-radius: var(--radius-lg); padding: 1.75rem; width: 100%; max-width: 360px; }
+
+  /* ── MODAL ── */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: flex-end; justify-content: center; z-index: 200; }
+  @media(min-width:600px) { .modal-backdrop { align-items: center; padding: 20px; } }
+  .modal-box { background: var(--bg); border: 0.5px solid var(--brd2); border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 1.25rem; width: 100%; max-height: 90vh; overflow-y: auto; }
+  @media(min-width:600px) { .modal-box { border-radius: var(--radius-lg); max-width: 460px; } }
+  .modal-handle { width: 40px; height: 4px; border-radius: 2px; background: var(--brd2); margin: 0 auto 14px; }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .modal-header h3 { font-size: 14px; font-weight: 500; }
+  .modal-footer { display: flex; gap: 8px; margin-top: 14px; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     LOGIN
+══════════════════════════════════════════════ -->
+<div id="s-login" class="screen active">
+  <div class="login-wrap">
+    <div class="login-card">
+      <div style="text-align:center;margin-bottom:1.5rem">
+        <div style="width:52px;height:52px;border-radius:50%;background:var(--mega);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:22px">🛡️</div>
+        <div style="font-size:18px;font-weight:500">MegaFllex Auditoria</div>
+        <div style="font-size:12px;color:var(--txt2);margin-top:4px">Sistema de conciliação financeira</div>
+      </div>
+      <div id="login-erro" class="notice n-danger" style="display:none"></div>
+      <div class="irow"><label>E-mail</label><input type="email" id="l-email" placeholder="seu@email.com" autocomplete="username"></div>
+      <div class="irow"><label>Senha</label><input type="password" id="l-senha" placeholder="••••••••" autocomplete="current-password"></div>
+      <button class="btn" style="width:100%;margin-top:4px;padding:11px" onclick="fazerLogin()">
+        <span id="login-txt">Entrar</span>
+      </button>
+      <div style="margin-top:16px;padding:10px 12px;background:var(--bg2);border-radius:var(--radius);font-size:11px;color:var(--txt2)">
+        <strong>Perfis de teste:</strong><br>
+        admin@megafllex.com · proprietario@redesuper.com · operador@redesuper.com<br>
+        <em>(crie esses usuários no Supabase Auth e insira os perfis na tabela perfis)</em>
+      </div>
+      <div class="rodape">© 2026 · MegaFllex Soluções</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     MEGAFLLEX
+══════════════════════════════════════════════ -->
+<div id="s-mega" class="screen">
+  <div class="app">
+    <div class="card">
+      <div class="topbar" style="background:var(--mega);border-radius:var(--radius-lg) var(--radius-lg) 0 0">
+        <button onclick="confirmarSaida()" class="btn-sair" style="border-color:var(--mega-brd);color:var(--mega-txt)">⬅ Sair</button>
+        <div class="avatar av-mega">🛡️</div>
+        <div class="topbar-info">
+          <div style="font-size:13px;font-weight:500;color:var(--mega-txt)">MegaFllex Auditoria</div>
+          <div style="font-size:10px;color:var(--mega-sub)" id="mega-user-nome">Administrador master</div>
+        </div>
+      </div>
+      <div class="inner">
+        <div class="tab-bar">
+          <button class="tab active" onclick="mTab('dashboard',this)">📊 Dashboard</button>
+          <button class="tab" onclick="mTab('empresas',this)">🏢 Empresas</button>
+          <button class="tab" onclick="mTab('lancamentos',this)">📋 Lançamentos</button>
+          <button class="tab" onclick="mTab('auditoria',this)">🛡️ Auditoria</button>
+          <button class="tab" onclick="mTab('campos',this)">⚙️ Campos</button>
+        </div>
+
+        <div id="m-dashboard">
+          <div class="grid4" id="m-dash-cards"></div>
+          <div class="sect">Resumo por empresa</div>
+          <div id="m-dash-emp"></div>
+        </div>
+
+        <div id="m-empresas" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap">
+            <div class="sect" style="margin:0">Empresas cadastradas</div>
+            <button class="btn" onclick="abrirModalEmpresa()" style="font-size:12px;padding:7px 12px">+ Nova empresa</button>
+          </div>
+          <div id="lista-empresas"></div>
+        </div>
+
+        <div id="m-lancamentos" style="display:none">
+          <div class="notice n-mega">Selecione empresa, filial e mês para visualizar os lançamentos.</div>
+          <div class="grid3" style="margin-bottom:10px">
+            <div class="irow" style="margin:0"><label>Empresa</label>
+              <select id="m-sel-emp" onchange="mAtualizaFiliais()"><option value="">Selecione...</option></select>
+            </div>
+            <div class="irow" style="margin:0"><label>Filial</label>
+              <select id="m-sel-fil"><option value="">Selecione...</option></select>
+            </div>
+            <div class="irow" style="margin:0"><label>Mês/Ano</label>
+              <select id="m-sel-mes"></select>
+            </div>
+          </div>
+          <button class="btn" onclick="mCarregarLanc()" style="margin-bottom:12px;width:100%">🔍 Buscar lançamentos</button>
+          <div class="legenda">
+            <div class="leg-item"><div class="leg-box" style="background:#FFF3CD;border-color:#E6A817"></div>Proprietário</div>
+            <div class="leg-item"><div class="leg-box" style="background:#FFD6D6;border-color:#D85A30"></div>Operador</div>
+          </div>
+          <div class="tbl-wrap"><table><thead id="m-lanc-head"></thead><tbody id="m-lanc-body"></tbody></table></div>
+        </div>
+
+        <div id="m-auditoria" style="display:none">
+          <div class="sect">Log global de todas as edições</div>
+          <div id="m-audit-lista"></div>
+        </div>
+
+        <div id="m-campos" style="display:none">
+          <div class="notice n-mega">Somente a MegaFllex Auditoria pode adicionar ou remover campos.</div>
+          <div class="sect">Campos ativos</div>
+          <div id="m-campos-ativos" style="margin-bottom:12px"></div>
+          <div class="sect">Adicionar campo</div>
+          <div style="background:var(--bg2);border-radius:var(--radius-lg);padding:14px;margin-bottom:10px">
+            <div class="grid3" style="margin-bottom:8px">
+              <div class="irow"><label>Nome</label><input type="text" id="m-novo-nome" placeholder="Ex: Cartão Elo"></div>
+              <div class="irow"><label>Grupo</label>
+                <select id="m-novo-grupo"><option>Pix</option><option>Carro Forte</option><option>Pagamentos</option><option>Cartões</option><option>Outros</option></select>
+              </div>
+              <div class="irow"><label>Tipo</label>
+                <select id="m-novo-tipo"><option value="moeda">Valor (R$)</option><option value="texto">Texto/ok</option></select>
+              </div>
+            </div>
+            <button class="btn" onclick="adicionarCampo()" style="width:100%">+ Adicionar campo</button>
+            <div id="m-campo-fb" style="margin-top:6px;font-size:11px;color:var(--pos);display:none"></div>
+          </div>
+        </div>
+      </div>
+      <div class="rodape">© 2026 · MegaFllex Soluções</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     EMPRESA (PROPRIETÁRIO)
+══════════════════════════════════════════════ -->
+<div id="s-empresa" class="screen">
+  <div class="app">
+    <div class="card" style="border-color:var(--prop-brd)">
+      <div class="topbar" style="background:var(--prop);border-radius:var(--radius-lg) var(--radius-lg) 0 0">
+        <button onclick="confirmarSaida()" class="btn-sair" style="border-color:var(--prop-brd);color:var(--prop-txt)">⬅ Sair</button>
+        <div class="avatar av-emp">🏢</div>
+        <div class="topbar-info">
+          <div style="font-size:13px;font-weight:500;color:var(--prop-txt)" id="emp-nome-top">Empresa</div>
+          <div style="font-size:10px;color:var(--prop-txt)">Proprietário · edições em laranja</div>
+        </div>
+      </div>
+      <div class="inner">
+        <div class="tab-bar">
+          <button class="tab active" onclick="eTab('lancamentos',this)">📋 Lançamentos</button>
+          <button class="tab" onclick="eTab('auditoria',this)">🛡️ Minhas edições</button>
+        </div>
+        <div id="e-lancamentos">
+          <div class="notice n-warn">Suas edições ficam em <strong>laranja</strong> e registradas na <strong>MegaFllex Auditoria</strong>.</div>
+          <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:flex-end">
+            <div class="irow" style="margin:0;flex:1;min-width:130px"><label>Filial</label>
+              <select id="e-sel-fil" onchange="eCarregarLanc()"></select>
+            </div>
+            <div class="irow" style="margin:0;flex:1;min-width:130px"><label>Mês/Ano</label>
+              <select id="e-sel-mes" onchange="eCarregarLanc()"></select>
+            </div>
+          </div>
+          <div class="legenda">
+            <div class="leg-item"><div class="leg-box" style="background:#FFF3CD;border-color:#E6A817"></div>Editado por você</div>
+            <div class="leg-item"><div class="leg-box" style="background:#FFD6D6;border-color:#D85A30"></div>Pelo operador</div>
+          </div>
+          <div class="tbl-wrap"><table><thead id="e-lanc-head"></thead><tbody id="e-lanc-body"></tbody></table></div>
+        </div>
+        <div id="e-auditoria" style="display:none">
+          <div class="notice n-warn">Todas as suas edições são visíveis também para a <strong>MegaFllex Auditoria</strong>.</div>
+          <div class="sect">Suas edições registradas</div>
+          <div id="e-audit-lista"></div>
+        </div>
+      </div>
+      <div class="rodape">© 2026 · MegaFllex Soluções</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     FILIAL (OPERADOR)
+══════════════════════════════════════════════ -->
+<div id="s-filial" class="screen">
+  <div class="app">
+    <div class="card" style="border-color:var(--oper-brd)">
+      <div class="topbar" style="background:var(--oper);border-radius:var(--radius-lg) var(--radius-lg) 0 0">
+        <button onclick="confirmarSaida()" class="btn-sair" style="border-color:var(--oper-brd);color:var(--oper-txt)">⬅ Sair</button>
+        <div class="avatar av-fil">👤</div>
+        <div class="topbar-info">
+          <div style="font-size:13px;font-weight:500;color:var(--oper-txt)" id="fil-nome-top">Operador</div>
+          <div style="font-size:10px;color:var(--oper-txt)" id="fil-emp-top">Filial · edições em vermelho</div>
+        </div>
+      </div>
+      <div class="inner">
+        <div class="tab-bar">
+          <button class="tab active" onclick="fTab('lancar',this)">+ Lançar dia</button>
+          <button class="tab" onclick="fTab('historico',this)">📋 Histórico</button>
+        </div>
+        <div id="f-lancar">
+          <div class="notice n-oper" id="f-notice-filial">Lançamentos identificados pela <strong>MegaFllex Auditoria</strong>.</div>
+          <div class="irow" style="margin-bottom:10px"><label>Data</label><input type="date" id="f-data"></div>
+          <div id="f-form-campos"></div>
+          <button class="btn" style="width:100%;margin-top:4px;padding:12px" onclick="salvarLanc()">💾 Salvar lançamento</button>
+          <div id="f-fb" style="margin-top:8px;font-size:12px;color:var(--pos);display:none">✅ Lançamento salvo!</div>
+        </div>
+        <div id="f-historico" style="display:none">
+          <div class="notice n-oper">Suas correções ficam em <strong>vermelho</strong> e registradas na <strong>MegaFllex Auditoria</strong>.</div>
+          <div class="irow" style="margin-bottom:10px"><label>Mês/Ano</label>
+            <select id="f-sel-mes" onchange="fCarregarHist()"></select>
+          </div>
+          <div class="legenda">
+            <div class="leg-item"><div class="leg-box" style="background:#FFD6D6;border-color:#D85A30"></div>Editado por você</div>
+            <div class="leg-item"><div class="leg-box" style="background:#FFF3CD;border-color:#E6A817"></div>Pelo proprietário</div>
+          </div>
+          <div class="tbl-wrap"><table><thead id="f-hist-head"></thead><tbody id="f-hist-body"></tbody></table></div>
+        </div>
+      </div>
+      <div class="rodape">© 2026 · MegaFllex Soluções</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     EDIÇÃO DE LANÇAMENTO
+══════════════════════════════════════════════ -->
+<div id="s-edit" class="screen">
+  <div class="app">
+    <div class="card" id="edit-outer">
+      <div class="topbar" id="edit-topbar">
+        <button id="edit-back-btn" class="btn-sair">⬅ Voltar</button>
+        <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">Editar lançamento</div></div>
+        <span id="edit-badge"></span>
+      </div>
+      <div class="inner">
+        <div id="edit-notice" class="notice"></div>
+        <div id="edit-campos-form"></div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button id="edit-cancel-btn" class="btn" style="flex:1;color:var(--txt2)">Cancelar</button>
+          <button id="edit-save-btn" class="btn" style="flex:1">💾 Salvar edição</button>
+        </div>
+      </div>
+      <div class="rodape">© 2026 · MegaFllex Soluções</div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-root"></div>
+
+<script>
+// ══════════════════════════════════════════════
+// CONFIGURAÇÃO SUPABASE
+// ══════════════════════════════════════════════
+const SUPABASE_URL = "https://evqvkosqxdowjlbwkuwo.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2cXZrb3NxeGRvd2psYndrdXdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTE5MTMsImV4cCI6MjA5NDU4NzkxM30.ZtD4YIwZdAgO0YHcN8IJ8BX9-6DKcL1dE9RnzqpvkGI";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ══════════════════════════════════════════════
+// ESTADO GLOBAL
+// ══════════════════════════════════════════════
+let usuarioAtual = null;   // auth.user
+let perfilAtual  = null;   // registro da tabela perfis
+let empresasCache = [];
+let camposCache   = [];
+let editLancId    = null;
+let editOriginal  = null;
+let editQuem      = '';
+const MESES_DISP  = ['01/2026','02/2026','03/2026','04/2026','05/2026','06/2026'];
+
+// ══════════════════════════════════════════════
+// UTILITÁRIOS
+// ══════════════════════════════════════════════
+function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); window.scrollTo(0,0); }
+function mascaraBRL(el){
+  el.addEventListener('input',()=>{
+    const neg=el.value.trim().startsWith('-');
+    let d=el.value.replace(/\D/g,'');
+    if(!d){el.value=neg?'-':'';return;}
+    el.value=(neg?'-':'')+(parseInt(d)/100).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  });
+}
+function parseBRL(s){ if(!s||s==='')return 0; return parseFloat(String(s).replace(/\./g,'').replace(',','.'))||0; }
+function fmtBRL(v){ if(!v)return''; const s=Math.abs(v).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.'); return(v<0?'-':'')+s; }
+function fmtR(v){ if(v===0||v===null||v===undefined)return'ok'; if(typeof v==='string')return v; const s=Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); return(v<0?'-R$ ':'R$ ')+s; }
+function fmtT(v){ if(typeof v!=='number')return'R$ 0,00'; const s=Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); return(v<0?'-R$ ':'R$ ')+s; }
+function cls(v){ if(typeof v==='string')return'neu'; return v>0?'pos':v<0?'neg':'neu'; }
+function hoje(){ return new Date().toISOString().slice(0,10); }
+function mesAnoDeData(d){ const p=d.split('-'); return`${p[1]}/${p[0]}`; }
+function loading(txt){ return`<span class="spinner"></span>${txt||'Carregando...'}`; }
+function abrirModal(html){ document.getElementById('modal-root').innerHTML=`<div class="modal-backdrop" onclick="fechaModalFundo(event)">${html}</div>`; }
+function fecharModal(){ document.getElementById('modal-root').innerHTML=''; }
+function fechaModalFundo(e){ if(e.target.classList.contains('modal-backdrop'))fecharModal(); }
+
+// ══════════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════════
+async function fazerLogin(){
+  const email=document.getElementById('l-email').value.trim();
+  const senha=document.getElementById('l-senha').value;
+  const btn=document.getElementById('login-txt');
+  const erro=document.getElementById('login-erro');
+  erro.style.display='none';
+  btn.innerHTML=loading('Entrando...');
+  const {data,error}=await sb.auth.signInWithPassword({email,password:senha});
+  if(error){ btn.textContent='Entrar'; erro.textContent='❌ '+error.message; erro.style.display='flex'; return; }
+  usuarioAtual=data.user;
+  await carregarPerfil();
+}
+
+async function carregarPerfil(){
+  const {data,error}=await sb.from('perfis').select('*').eq('user_id',usuarioAtual.id).single();
+  if(error||!data){ document.getElementById('login-txt').textContent='Entrar'; document.getElementById('login-erro').textContent='❌ Perfil não encontrado. Contate a MegaFllex.'; document.getElementById('login-erro').style.display='flex'; await sb.auth.signOut(); return; }
+  perfilAtual=data;
+  document.getElementById('login-txt').textContent='Entrar';
+  await carregarCampos();
+  if(data.papel==='megafllex') await iniciarMega();
+  else if(data.papel==='proprietario') await iniciarEmpresa();
+  else await iniciarFilial();
+}
+
+async function confirmarSaida(){
+  abrirModal(`<div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-header"><h3>Sair do sistema</h3></div>
+    <div style="font-size:13px;color:var(--txt2);margin-bottom:4px">Deseja encerrar sua sessão?</div>
+    <div class="modal-footer">
+      <button class="btn" style="flex:1;color:var(--txt2)" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-danger" style="flex:1" onclick="logout()">⬅ Sair</button>
+    </div>
+  </div>`);
+}
+async function logout(){ await sb.auth.signOut(); fecharModal(); usuarioAtual=null; perfilAtual=null; show('s-login'); }
+
+// ══════════════════════════════════════════════
+// CAMPOS
+// ══════════════════════════════════════════════
+async function carregarCampos(){
+  const {data}=await sb.from('campos').select('*').eq('ativo',true).order('ordem');
+  camposCache=data||[];
+}
+
+function renderMegaCampos(){
+  const grupos={};
+  camposCache.forEach(c=>{ if(!grupos[c.grupo])grupos[c.grupo]=[]; grupos[c.grupo].push(c); });
+  let html='';
+  Object.entries(grupos).forEach(([g,cs])=>{
+    html+=`<div class="grupo-titulo">📁 ${g}</div><div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:4px">`;
+    cs.forEach(c=>{
+      html+=`<span class="campo-tag">${c.label}<span style="font-size:9px;color:var(--txt3);margin-left:2px">(${c.tipo==='moeda'?'R$':'txt'})</span>
+        <button onclick="abrirModalCampo('${c.id}')" title="Editar">✏️</button>
+        <button onclick="confirmarDeleteCampo('${c.id}')" title="Remover">×</button>
+      </span>`;
+    });
+    html+='</div>';
+  });
+  document.getElementById('m-campos-ativos').innerHTML=html;
+}
+
+async function adicionarCampo(){
+  const nome=document.getElementById('m-novo-nome').value.trim();
+  if(!nome){alert('Informe o nome');return;}
+  const grupo=document.getElementById('m-novo-grupo').value;
+  const tipo=document.getElementById('m-novo-tipo').value;
+  const maxOrdem=camposCache.reduce((a,c)=>Math.max(a,c.ordem),0);
+  const {error}=await sb.from('campos').insert({label:nome,grupo,tipo,ordem:maxOrdem+1,criado_por:usuarioAtual.id});
+  if(error){alert('Erro: '+error.message);return;}
+  document.getElementById('m-novo-nome').value='';
+  const fb=document.getElementById('m-campo-fb');
+  fb.textContent=`✅ Campo "${nome}" adicionado!`; fb.style.display='block';
+  setTimeout(()=>fb.style.display='none',2500);
+  await carregarCampos(); renderMegaCampos();
+}
+
+function abrirModalCampo(id){
+  const c=camposCache.find(x=>x.id===id);
+  abrirModal(`<div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-header"><h3>Editar campo</h3><button onclick="fecharModal()" style="border:none;background:none;cursor:pointer;font-size:18px">×</button></div>
+    <div class="irow"><label>Nome</label><input type="text" id="mc-nome" value="${c.label}"></div>
+    <div class="irow"><label>Grupo</label><select id="mc-grupo">${['Jogos','Pix','Carro Forte','Pagamentos','Cartões','Outros'].map(g=>`<option${g===c.grupo?' selected':''}>${g}</option>`).join('')}</select></div>
+    <div class="irow"><label>Tipo</label><select id="mc-tipo"><option value="moeda"${c.tipo==='moeda'?' selected':''}>Valor (R$)</option><option value="texto"${c.tipo==='texto'?' selected':''}>Texto/ok</option></select></div>
+    <div class="modal-footer">
+      <button class="btn" style="flex:1;color:var(--txt2)" onclick="fecharModal()">Cancelar</button>
+      <button class="btn" style="flex:1" onclick="salvarCampo('${id}')">💾 Salvar</button>
+    </div>
+  </div>`);
+}
+async function salvarCampo(id){
+  const label=document.getElementById('mc-nome').value.trim();
+  const grupo=document.getElementById('mc-grupo').value;
+  const tipo=document.getElementById('mc-tipo').value;
+  await sb.from('campos').update({label,grupo,tipo}).eq('id',id);
+  fecharModal(); await carregarCampos(); renderMegaCampos();
+}
+function confirmarDeleteCampo(id){
+  const c=camposCache.find(x=>x.id===id);
+  abrirModal(`<div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-header"><h3>Remover campo</h3><button onclick="fecharModal()" style="border:none;background:none;cursor:pointer;font-size:18px">×</button></div>
+    <div class="notice n-danger">Remover o campo <strong>${c.label}</strong>? Dados já lançados são mantidos.</div>
+    <div class="modal-footer">
+      <button class="btn" style="flex:1;color:var(--txt2)" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-danger" style="flex:1" onclick="deletarCampo('${id}')">🗑️ Remover</button>
+    </div>
+  </div>`);
+}
+async function deletarCampo(id){
+  await sb.from('campos').update({ativo:false}).eq('id',id);
+  fecharModal(); await carregarCampos(); renderMegaCampos();
+}
+
+// ══════════════════════════════════════════════
+// MEGAFLLEX
+// ══════════════════════════════════════════════
+async function iniciarMega(){
+  document.getElementById('mega-user-nome').textContent=perfilAtual.nome||'Administrador';
+  const {data}=await sb.from('empresas').select('*, filiais(*)').eq('ativa',true);
+  empresasCache=data||[];
+  renderMegaDash(); renderMegaEmpresas(); renderMegaCampos(); preencherSelectsMega();
+  show('s-mega');
+}
+
+function preencherSelectsMega(){
+  const se=document.getElementById('m-sel-emp');
+  se.innerHTML='<option value="">Selecione...</option>'+empresasCache.map(e=>`<option value="${e.id}">${e.nome}</option>`).join('');
+  const sm=document.getElementById('m-sel-mes');
+  sm.innerHTML=MESES_DISP.map(m=>`<option value="${m}">${m}</option>`).join('');
+  sm.value='04/2026';
+}
+
+function mAtualizaFiliais(){
+  const eId=document.getElementById('m-sel-emp').value;
+  const emp=empresasCache.find(e=>e.id===eId);
+  const sf=document.getElementById('m-sel-fil');
+  sf.innerHTML=emp?'<option value="">Selecione...</option>'+(emp.filiais||[]).map(f=>`<option value="${f.id}">${f.nome}</option>`).join(''):'<option value="">Selecione a empresa primeiro</option>';
+}
+
+async function renderMegaDash(){
+  const {data:lancs}=await sb.from('lancamentos').select('total_dif,empresa_id');
+  const {data:audits}=await sb.from('audit_log').select('id');
+  const totalLanc=lancs?.length||0;
+  const totalDif=lancs?.reduce((a,l)=>a+(l.total_dif||0),0)||0;
+  const totalEdits=audits?.length||0;
+  document.getElementById('m-dash-cards').innerHTML=`
+    <div class="metric" style="background:var(--mega)"><div class="lbl" style="color:var(--mega-sub)">Empresas</div><div class="val" style="color:var(--mega-txt)">${empresasCache.length}</div></div>
+    <div class="metric" style="background:var(--bg2)"><div class="lbl" style="color:var(--txt2)">Lançamentos</div><div class="val">${totalLanc}</div></div>
+    <div class="metric" style="background:${totalEdits>0?'var(--prop)':'var(--ok-bg)'}"><div class="lbl" style="color:${totalEdits>0?'var(--prop-txt)':'var(--ok-txt)'}">Edições log</div><div class="val" style="color:${totalEdits>0?'var(--prop-txt)':'var(--pos)'}">${totalEdits}</div></div>
+    <div class="metric" style="background:${Math.abs(totalDif)>1?'var(--diff-bg)':'var(--ok-bg)'}"><div class="lbl" style="color:${Math.abs(totalDif)>1?'var(--diff-txt)':'var(--ok-txt)'}">Total dif.</div><div class="val" style="font-size:13px;color:${totalDif<0?'var(--neg)':totalDif>0?'var(--pos)':'var(--txt)'}">${fmtT(totalDif)}</div></div>`;
+  document.getElementById('m-dash-emp').innerHTML=empresasCache.map(e=>{
+    const rows=lancs?.filter(l=>l.empresa_id===e.id)||[];
+    const tot=rows.reduce((a,l)=>a+(l.total_dif||0),0);
+    return`<div class="emp-card" style="display:flex;align-items:center;gap:12px">
+      <div class="avatar av-emp" style="width:36px;height:36px;font-size:13px;flex-shrink:0">${e.nome.split(' ').map(w=>w[0]).join('').slice(0,2)}</div>
+      <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">${e.nome}</div><div style="font-size:10px;color:var(--txt2)">${(e.filiais||[]).length} filial(is)</div></div>
+      <div style="text-align:right"><div style="font-size:11px;color:var(--txt2)">${rows.length} lanç.</div><div style="font-size:12px;font-weight:500" class="${cls(tot)}">${fmtT(tot)}</div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderMegaEmpresas(){
+  document.getElementById('lista-empresas').innerHTML=empresasCache.map(e=>`
+    <div class="emp-card" style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+      <div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0">
+        <div class="avatar av-emp" style="width:38px;height:38px;font-size:13px;flex-shrink:0;margin-top:2px">${e.nome.split(' ').map(w=>w[0]).join('').slice(0,2)}</div>
+        <div style="min-width:0">
+          <div style="font-size:13px;font-weight:500">${e.nome}</div>
+          <div style="font-size:11px;color:var(--txt2)">${e.cnpj} · ${(e.filiais||[]).length} filial(is)</div>
+          <div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap">${(e.filiais||[]).map(f=>`<span class="badge b-ok" style="font-size:10px">${f.nome}</span>`).join('')}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn-sm" onclick="abrirModalEmpresa('${e.id}')">✏️</button>
+        <button class="btn-sm" onclick="confirmarDeleteEmpresa('${e.id}')" style="color:var(--neg)">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+async function mCarregarLanc(){
+  const eId=document.getElementById('m-sel-emp').value;
+  const fId=document.getElementById('m-sel-fil').value;
+  const mes=document.getElementById('m-sel-mes').value;
+  if(!eId||!fId){alert('Selecione empresa e filial');return;}
+  document.getElementById('m-lanc-body').innerHTML=`<tr><td colspan="10">${loading('Buscando...')}</td></tr>`;
+  const {data}=await sb.from('lancamentos').select('*').eq('filial_id',fId).eq('mes_ano',mes).order('data_lanc');
+  buildTable(document.getElementById('m-lanc-head'),document.getElementById('m-lanc-body'),data||[],false,'');
+}
+
+async function renderMegaAudit(){
+  document.getElementById('m-audit-lista').innerHTML=loading('Carregando auditoria...');
+  const {data}=await sb.from('audit_log').select('*').order('editado_em',{ascending:false}).limit(50);
+  document.getElementById('m-audit-lista').innerHTML=buildAuditHtml(data||[]);
+}
+
+function mTab(t,btn){
+  document.querySelectorAll('#s-mega .tab').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
+  ['dashboard','empresas','lancamentos','auditoria','campos'].forEach(x=>document.getElementById('m-'+x).style.display='none');
+  document.getElementById('m-'+t).style.display='block';
+  if(t==='auditoria')renderMegaAudit();
+  if(t==='campos')renderMegaCampos();
+  if(t==='empresas')renderMegaEmpresas();
+  if(t==='dashboard')renderMegaDash();
+}
+
+// CRUD Empresas
+function abrirModalEmpresa(id){
+  const emp=id?empresasCache.find(e=>e.id===id):null;
+  const filStr=emp?(emp.filiais||[]).map(f=>f.nome).join('\n'):'';
+  abrirModal(`<div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-header"><h3>${emp?'Editar empresa':'Nova empresa'}</h3><button onclick="fecharModal()" style="border:none;background:none;cursor:pointer;font-size:18px">×</button></div>
+    <div class="irow"><label>Nome da empresa</label><input type="text" id="mo-nome" value="${emp?emp.nome:''}" placeholder="Ex: Supermercado ABC"></div>
+    <div class="irow"><label>CNPJ</label><input type="text" id="mo-cnpj" value="${emp?emp.cnpj:''}" placeholder="00.000.000/0001-00"></div>
+    <div class="irow"><label>Filiais (uma por linha)</label><textarea id="mo-filiais" rows="4" style="resize:vertical;padding:8px 10px;border:0.5px solid var(--brd2);border-radius:var(--radius);background:var(--bg);color:var(--txt);font-size:14px;width:100%;font-family:inherit">${filStr}</textarea></div>
+    <div class="modal-footer">
+      <button class="btn" style="flex:1;color:var(--txt2)" onclick="fecharModal()">Cancelar</button>
+      <button class="btn" style="flex:1" onclick="salvarEmpresa('${id||''}')">💾 Salvar</button>
+    </div>
+  </div>`);
+}
+async function salvarEmpresa(id){
+  const nome=document.getElementById('mo-nome').value.trim();
+  const cnpj=document.getElementById('mo-cnpj').value.trim();
+  const filStr=document.getElementById('mo-filiais').value.trim();
+  if(!nome){alert('Informe o nome');return;}
+  const nomes=filStr?filStr.split('\n').map(s=>s.trim()).filter(Boolean):[];
+  let empId=id;
+  if(id){
+    await sb.from('empresas').update({nome,cnpj}).eq('id',id);
+  } else {
+    const {data}=await sb.from('empresas').insert({nome,cnpj,criado_por:usuarioAtual.id}).select().single();
+    empId=data?.id;
+  }
+  if(empId&&nomes.length){
+    if(id) await sb.from('filiais').delete().eq('empresa_id',empId);
+    await sb.from('filiais').insert(nomes.map(n=>({empresa_id:empId,nome:n})));
+  }
+  fecharModal();
+  const {data}=await sb.from('empresas').select('*, filiais(*)').eq('ativa',true);
+  empresasCache=data||[];
+  renderMegaEmpresas(); renderMegaDash(); preencherSelectsMega();
+}
+function confirmarDeleteEmpresa(id){
+  const emp=empresasCache.find(e=>e.id===id);
+  abrirModal(`<div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-header"><h3>Remover empresa</h3><button onclick="fecharModal()" style="border:none;background:none;cursor:pointer;font-size:18px">×</button></div>
+    <div class="notice n-danger">Remover <strong>${emp.nome}</strong>? Esta ação não pode ser desfeita.</div>
+    <div class="modal-footer">
+      <button class="btn" style="flex:1;color:var(--txt2)" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-danger" style="flex:1" onclick="deletarEmpresa('${id}')">🗑️ Remover</button>
+    </div>
+  </div>`);
+}
+async function deletarEmpresa(id){
+  await sb.from('empresas').update({ativa:false}).eq('id',id);
+  fecharModal();
+  const {data}=await sb.from('empresas').select('*, filiais(*)').eq('ativa',true);
+  empresasCache=data||[];
+  renderMegaEmpresas(); renderMegaDash();
+}
+
+// ══════════════════════════════════════════════
+// EMPRESA (PROPRIETÁRIO)
+// ══════════════════════════════════════════════
+async function iniciarEmpresa(){
+  const emp=empresasCache.find(e=>e.id===perfilAtual.empresa_id)||
+            (await sb.from('empresas').select('*, filiais(*)').eq('id',perfilAtual.empresa_id).single()).data;
+  if(emp&&!empresasCache.find(e=>e.id===emp.id))empresasCache.push(emp);
+  document.getElementById('emp-nome-top').textContent=emp?.nome||'Empresa';
+  const filiais=emp?.filiais||[];
+  const sf=document.getElementById('e-sel-fil');
+  sf.innerHTML=filiais.map(f=>`<option value="${f.id}">${f.nome}</option>`).join('');
+  const sm=document.getElementById('e-sel-mes');
+  sm.innerHTML=MESES_DISP.map(m=>`<option value="${m}">${m}</option>`).join('');
+  sm.value='04/2026';
+  await eCarregarLanc();
+  show('s-empresa');
+}
+
+async function eCarregarLanc(){
+  const fId=document.getElementById('e-sel-fil').value;
+  const mes=document.getElementById('e-sel-mes').value;
+  if(!fId)return;
+  document.getElementById('e-lanc-body').innerHTML=`<tr><td colspan="10">${loading('Buscando...')}</td></tr>`;
+  const {data}=await sb.from('lancamentos').select('*').eq('filial_id',fId).eq('mes_ano',mes).order('data_lanc');
+  buildTable(document.getElementById('e-lanc-head'),document.getElementById('e-lanc-body'),data||[],true,'empresa');
+}
+
+async function renderEmpAudit(){
+  document.getElementById('e-audit-lista').innerHTML=loading('Carregando...');
+  const {data}=await sb.from('audit_log').select('*').eq('empresa_id',perfilAtual.empresa_id).eq('papel_editor','proprietario').order('editado_em',{ascending:false}).limit(30);
+  document.getElementById('e-audit-lista').innerHTML=buildAuditHtml(data||[]);
+}
+
+function eTab(t,btn){
+  document.querySelectorAll('#s-empresa .tab').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
+  ['lancamentos','auditoria'].forEach(x=>document.getElementById('e-'+x).style.display='none');
+  document.getElementById('e-'+t).style.display='block';
+  if(t==='lancamentos')eCarregarLanc();
+  if(t==='auditoria')renderEmpAudit();
+}
+
+// ══════════════════════════════════════════════
+// FILIAL (OPERADOR)
+// ══════════════════════════════════════════════
+async function iniciarFilial(){
+  const {data:fil}=await sb.from('filiais').select('*, empresas(nome)').eq('id',perfilAtual.filial_id).single();
+  document.getElementById('fil-nome-top').textContent='Operador · '+(fil?.nome||'Filial');
+  document.getElementById('fil-emp-top').textContent=(fil?.empresas?.nome||'Empresa')+' · edições em vermelho';
+  document.getElementById('f-notice-filial').innerHTML=`Lançamentos identificados pela <strong>MegaFllex Auditoria</strong>. Filial: <strong>${fil?.nome||''}</strong>`;
+  const sm=document.getElementById('f-sel-mes');
+  sm.innerHTML=MESES_DISP.map(m=>`<option value="${m}">${m}</option>`).join('');
+  sm.value='04/2026';
+  const d=new Date(); document.getElementById('f-data').value=d.toISOString().slice(0,10);
+  renderFilialForm();
+  show('s-filial');
+}
+
+function renderFilialForm(){
+  const grupos={};
+  camposCache.forEach(c=>{ if(!grupos[c.grupo])grupos[c.grupo]=[]; grupos[c.grupo].push(c); });
+  let html='';
+  Object.entries(grupos).forEach(([g,cs])=>{
+    html+=`<div class="grupo-titulo">📁 ${g}</div><div class="grid2">`;
+    cs.forEach(c=>{
+      html+=`<div class="irow"><label>${c.label}</label>`;
+      if(c.tipo==='moeda') html+=`<div class="input-brl"><span class="prefix">R$</span><input type="text" id="fl-${c.id}" placeholder="0,00" inputmode="decimal"></div>`;
+      else html+=`<input type="text" id="fl-${c.id}" placeholder="ok">`;
+      html+=`</div>`;
+    });
+    html+='</div>';
+  });
+  document.getElementById('f-form-campos').innerHTML=html;
+  camposCache.filter(c=>c.tipo==='moeda').forEach(c=>{ const el=document.getElementById('fl-'+c.id); if(el)mascaraBRL(el); });
+}
+
+async function salvarLanc(){
+  const dataVal=document.getElementById('f-data').value;
+  if(!dataVal){alert('Informe a data');return;}
+  const mesAno=mesAnoDeData(dataVal);
+  const valores={};
+  let totalDif=0;
+  camposCache.forEach(c=>{
+    const el=document.getElementById('fl-'+c.id);
+    if(!el)return;
+    const v=c.tipo==='moeda'?parseBRL(el.value):(el.value||'ok');
+    valores[c.label]=String(v);
+    if(c.tipo==='moeda')totalDif+=parseFloat(v)||0;
+  });
+  const {error}=await sb.from('lancamentos').upsert({
+    empresa_id:perfilAtual.empresa_id,
+    filial_id:perfilAtual.filial_id,
+    mes_ano:mesAno,
+    data_lanc:dataVal,
+    valores,
+    total_dif:totalDif,
+    criado_por:usuarioAtual.id
+  },{onConflict:'filial_id,data_lanc'});
+  if(error){alert('Erro ao salvar: '+error.message);return;}
+  camposCache.forEach(c=>{ const el=document.getElementById('fl-'+c.id); if(el)el.value=''; });
+  const fb=document.getElementById('f-fb'); fb.style.display='block';
+  setTimeout(()=>fb.style.display='none',2500);
+}
+
+async function fCarregarHist(){
+  const mes=document.getElementById('f-sel-mes').value;
+  document.getElementById('f-hist-body').innerHTML=`<tr><td colspan="10">${loading('Buscando...')}</td></tr>`;
+  const {data}=await sb.from('lancamentos').select('*').eq('filial_id',perfilAtual.filial_id).eq('mes_ano',mes).order('data_lanc');
+  buildTable(document.getElementById('f-hist-head'),document.getElementById('f-hist-body'),data||[],true,'filial');
+}
+
+function fTab(t,btn){
+  document.querySelectorAll('#s-filial .tab').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
+  document.getElementById('f-lancar').style.display=t==='lancar'?'block':'none';
+  document.getElementById('f-historico').style.display=t==='historico'?'block':'none';
+  if(t==='historico')fCarregarHist();
+}
+
+// ══════════════════════════════════════════════
+// TABELA DE LANÇAMENTOS
+// ══════════════════════════════════════════════
+function buildTable(headEl,bodyEl,rows,comEditar,quem){
+  const visCampos=camposCache.slice(0,5);
+  let head='<tr><th style="text-align:left;min-width:65px">Data</th>';
+  visCampos.forEach(c=>head+=`<th style="min-width:90px">${c.label}</th>`);
+  head+='<th style="min-width:95px">Total dif.</th><th style="min-width:75px">Status</th>';
+  if(comEditar)head+='<th style="min-width:50px">Edit.</th>';
+  head+='</tr>';
+  headEl.innerHTML=head;
+  if(!rows.length){
+    bodyEl.innerHTML=`<tr><td colspan="${5+3+(comEditar?1:0)}" style="text-align:center;padding:20px;color:var(--txt2)">Nenhum lançamento neste período.</td></tr>`;
+    return;
+  }
+  const totCols={};visCampos.forEach(c=>{totCols[c.label]=0;});
+  let tg=0;
+  const html=rows.map(l=>{
+    const vals=l.valores||{};
+    const total=l.total_dif||0; tg+=total;
+    let tds=`<td style="text-align:left">${l.data_lanc?.slice(8,10)+'/'+l.data_lanc?.slice(5,7)}</td>`;
+    visCampos.forEach(c=>{
+      const v=parseFloat(vals[c.label])||0;
+      if(c.tipo==='moeda')totCols[c.label]+=v;
+      const ep=l.editado_por_papel;
+      const celCls=ep==='proprietario'?'cel-prop':ep==='operador'?'cel-oper':'';
+      tds+=`<td class="${cls(v)} ${celCls}">${fmtR(c.tipo==='moeda'?v:(vals[c.label]||'ok'))}${ep?' ✎':''}</td>`;
+    });
+    const temP=l.tem_edicao_proprietario;
+    const temO=l.tem_edicao_operador;
+    let st='';
+    if(temP)st+=`<span class="badge b-prop">✎ prop.</span> `;
+    if(temO)st+=`<span class="badge b-oper">✎ oper.</span>`;
+    if(!temP&&!temO)st=Math.abs(total)<0.5?'<span class="badge b-ok">ok</span>':'<span class="badge b-diff">dif.</span>';
+    tds+=`<td class="${cls(total)}">${fmtT(total)}</td><td>${st}</td>`;
+    if(comEditar)tds+=`<td><button onclick="abrirEdit('${l.id}','${quem}')" class="btn-sm" title="Editar">✏️</button></td>`;
+    return`<tr>${tds}</tr>`;
+  }).join('');
+  let totRow='<tr class="total-row"><td style="text-align:left">Total</td>';
+  visCampos.forEach(c=>{ const v=totCols[c.label]||0; totRow+=`<td class="${cls(v)}">${fmtT(v)}</td>`; });
+  totRow+=`<td class="${cls(tg)}">${fmtT(tg)}</td><td></td>`;
+  if(comEditar)totRow+='<td></td>';
+  totRow+='</tr>';
+  bodyEl.innerHTML=html+totRow;
+}
+
+// ══════════════════════════════════════════════
+// EDIÇÃO DE LANÇAMENTO
+// ══════════════════════════════════════════════
+async function abrirEdit(id,quem){
+  editLancId=id; editQuem=quem;
+  const {data:l}=await sb.from('lancamentos').select('*').eq('id',id).single();
+  editOriginal=JSON.parse(JSON.stringify(l));
+  const isE=quem==='empresa';
+  const cor=isE?'var(--prop-brd)':'var(--oper-brd)';
+  const bgTop=isE?'var(--prop)':'var(--oper)';
+  const corTxt=isE?'var(--prop-txt)':'var(--oper-txt)';
+  document.getElementById('edit-outer').style.borderColor=cor;
+  const tb=document.getElementById('edit-topbar');
+  tb.style.background=bgTop; tb.style.borderRadius='12px 12px 0 0';
+  const bb=document.getElementById('edit-back-btn');
+  bb.style.borderColor=cor; bb.style.color=corTxt;
+  const dataFmt=l.data_lanc?.slice(8,10)+'/'+l.data_lanc?.slice(5,7);
+  document.getElementById('edit-badge').innerHTML=`<span class="badge ${isE?'b-prop':'b-oper'}">${dataFmt}</span>`;
+  const n=document.getElementById('edit-notice');
+  n.className=`notice ${isE?'n-warn':'n-oper'}`;
+  n.innerHTML=`🛡️ Identificado como <strong>${isE?'Proprietário':'Operador'}</strong>. Cada coluna alterada fica registrada na <strong>MegaFllex Auditoria</strong>.`;
+  document.getElementById('edit-back-btn').onclick=voltarEdit;
+  document.getElementById('edit-cancel-btn').onclick=voltarEdit;
+  const grupos={};
+  camposCache.forEach(c=>{ if(!grupos[c.grupo])grupos[c.grupo]=[]; grupos[c.grupo].push(c); });
+  let html='';
+  Object.entries(grupos).forEach(([g,cs])=>{
+    html+=`<div class="grupo-titulo">📁 ${g}</div><div class="grid2">`;
+    cs.forEach(c=>{
+      const v=parseFloat(l.valores?.[c.label])||0;
+      html+=`<div class="irow"><label>${c.label}</label>`;
+      if(c.tipo==='moeda') html+=`<div class="input-brl"><span class="prefix">R$</span><input type="text" id="ei-${c.id}" value="${fmtBRL(v)}" inputmode="decimal"></div>`;
+      else html+=`<input type="text" id="ei-${c.id}" value="${l.valores?.[c.label]||'ok'}">`;
+      html+=`</div>`;
+    });
+    html+='</div>';
+  });
+  document.getElementById('edit-campos-form').innerHTML=html;
+  camposCache.filter(c=>c.tipo==='moeda').forEach(c=>{ const el=document.getElementById('ei-'+c.id); if(el)mascaraBRL(el); });
+  show('s-edit');
+}
+
+async function salvarEdicao(){
+  const {data:l}=await sb.from('lancamentos').select('*').eq('id',editLancId).single();
+  const novosValores={...l.valores};
+  let novoTotal=0;
+  const mudancas=[];
+  camposCache.forEach(c=>{
+    const el=document.getElementById('ei-'+c.id);
+    if(!el)return;
+    if(c.tipo==='moeda'){
+      const novo=parseBRL(el.value);
+      const antes=parseFloat(editOriginal.valores?.[c.label])||0;
+      novoTotal+=novo;
+      if(Math.abs(novo-antes)>0.001){
+        novosValores[c.label]=String(novo);
+        mudancas.push({campo:c.label,antes:String(antes),depois:String(novo)});
+      }
+    } else {
+      const novo=el.value||'ok';
+      const antes=editOriginal.valores?.[c.label]||'ok';
+      if(novo!==antes){
+        novosValores[c.label]=novo;
+        mudancas.push({campo:c.label,antes,depois:novo});
+      }
+    }
+  });
+  if(!mudancas.length){voltarEdit();return;}
+  await sb.from('lancamentos').update({valores:novosValores,total_dif:novoTotal}).eq('id',editLancId);
+  const agora=new Date().toISOString();
+  const nomeEditor=perfilAtual.nome||editQuem;
+  const papelEditor=editQuem==='empresa'?'proprietario':'operador';
+  await sb.from('audit_log').insert(mudancas.map(m=>({
+    lancamento_id:editLancId,
+    empresa_id:l.empresa_id,
+    filial_id:l.filial_id,
+    mes_ano:l.mes_ano,
+    data_lanc:l.data_lanc,
+    campo_label:m.campo,
+    valor_antes:m.antes,
+    valor_depois:m.depois,
+    editado_por:usuarioAtual.id,
+    papel_editor:papelEditor,
+    nome_editor:nomeEditor,
+    editado_em:agora
+  })));
+  voltarEdit();
+}
+document.getElementById('edit-save-btn').onclick=salvarEdicao;
+
+function voltarEdit(){
+  if(editQuem==='empresa'){eCarregarLanc();show('s-empresa');}
+  else{fCarregarHist();show('s-filial');}
+}
+
+// ══════════════════════════════════════════════
+// AUDITORIA
+// ══════════════════════════════════════════════
+function buildAuditHtml(logs){
+  if(!logs.length)return'<div style="font-size:13px;color:var(--txt2);padding:12px 0;text-align:center">Nenhuma edição registrada ainda.</div>';
+  return logs.map(a=>{
+    const isP=a.papel_editor==='proprietario';
+    return`<div class="audit-card" style="border-color:${isP?'#E6A817':'#D85A30'}">
+      <div style="background:${isP?'var(--prop)':'var(--oper)'};margin:-10px -12px 10px;padding:9px 12px;border-radius:12px 12px 0 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span class="badge ${isP?'b-prop':'b-oper'}">✏️ ${a.nome_editor}</span>
+        <span style="font-size:11px;color:var(--txt2)">lançamento <strong>${a.data_lanc?.slice(8,10)+'/'+a.data_lanc?.slice(5,7)}</strong> · ${a.mes_ano}</span>
+        <span style="font-size:10px;color:var(--txt3);margin-left:auto">${new Date(a.editado_em).toLocaleString('pt-BR')}</span>
+      </div>
+      <div class="col-change">
+        <span style="font-weight:500;min-width:120px">${a.campo_label}</span>
+        <span class="neg">${fmtT(parseFloat(a.valor_antes)||0)}</span>
+        <span style="color:var(--txt3)">→</span>
+        <span class="pos">${fmtT(parseFloat(a.valor_depois)||0)}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// VERIFICAR SESSÃO AO CARREGAR
+// ══════════════════════════════════════════════
+(async()=>{
+  const {data:{session}}=await sb.auth.getSession();
+  if(session){
+    usuarioAtual=session.user;
+    await carregarCampos();
+    await carregarPerfil();
+  }
+})();
+</script>
+</body>
+</html>
