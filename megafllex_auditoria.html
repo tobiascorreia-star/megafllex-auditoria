@@ -19,7 +19,28 @@
   --ok-bg:#EAF3DE;--ok-txt:#3B6D11;
   --diff-bg:#FAECE7;--diff-txt:#993C1D;
 }
-@media(prefers-color-scheme:dark){:root{--bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;--txt:#e8e6de;--txt2:#9c9a92;--txt3:#6b6b67;--brd:rgba(255,255,255,0.12);--brd2:rgba(255,255,255,0.22)}}
+[data-tema="escuro"]{
+  --bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;
+  --txt:#e8e6de;--txt2:#9c9a92;--txt3:#6b6b67;
+  --brd:rgba(255,255,255,0.12);--brd2:rgba(255,255,255,0.22);
+  --mega:#1e1a3a;--mega-brd:#4a4280;--mega-txt:#c5bff5;--mega-sub:#9b93e8;
+  --prop:#2a2000;--prop-brd:#8a6500;--prop-txt:#f5d980;
+  --oper:#2a1010;--oper-brd:#8a3520;--oper-txt:#f5a090;
+  --ok-bg:#0f2010;--ok-txt:#5dd49a;
+  --diff-bg:#2a1010;--diff-txt:#f5a090;
+}
+@media(prefers-color-scheme:dark){
+  [data-tema="sistema"]{
+    --bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;
+    --txt:#e8e6de;--txt2:#9c9a92;--txt3:#6b6b67;
+    --brd:rgba(255,255,255,0.12);--brd2:rgba(255,255,255,0.22);
+    --mega:#1e1a3a;--mega-brd:#4a4280;--mega-txt:#c5bff5;--mega-sub:#9b93e8;
+    --prop:#2a2000;--prop-brd:#8a6500;--prop-txt:#f5d980;
+    --oper:#2a1010;--oper-brd:#8a3520;--oper-txt:#f5a090;
+    --ok-bg:#0f2010;--ok-txt:#5dd49a;
+    --diff-bg:#2a1010;--diff-txt:#f5a090;
+  }
+}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:var(--txt);background:var(--bg3);min-height:100vh}
 .app{max-width:800px;margin:0 auto;padding:12px}
 .screen{display:none}.screen.active{display:block}
@@ -109,6 +130,11 @@ tr:hover td:first-child{background:var(--bg2)}
         <div style="width:52px;height:52px;border-radius:50%;background:var(--mega);display:flex;align-items:center;justify-content:center;margin:0 auto 10px"><span style="font-size:26px;filter:hue-rotate(200deg) saturate(2)">🛡️</span></div>
         <div style="font-size:18px;font-weight:500">MegaFllex Auditoria</div>
         <div style="font-size:12px;color:var(--txt2);margin-top:4px">Sistema de conciliação financeira</div>
+        <div style="display:flex;justify-content:center;gap:4px;margin-top:10px">
+          <button onclick="setTema('claro')" id="btn-claro" style="padding:4px 10px;border-radius:var(--r);border:0.5px solid var(--brd2);background:var(--bg2);cursor:pointer;font-size:11px;color:var(--txt2);font-family:inherit">☀️ Claro</button>
+          <button onclick="setTema('escuro')" id="btn-escuro" style="padding:4px 10px;border-radius:var(--r);border:0.5px solid var(--brd2);background:var(--bg2);cursor:pointer;font-size:11px;color:var(--txt2);font-family:inherit">🌙 Escuro</button>
+          <button onclick="setTema('sistema')" id="btn-sistema" style="padding:4px 10px;border-radius:var(--r);border:0.5px solid var(--brd2);background:var(--bg2);cursor:pointer;font-size:11px;color:var(--txt2);font-family:inherit">⚙️ Sistema</button>
+        </div>
       </div>
       <div id="login-erro" class="notice n-danger" style="display:none"></div>
       <div class="irow"><label>E-mail</label><input type="email" id="l-email" placeholder="seu@email.com" autocomplete="username"></div>
@@ -133,6 +159,7 @@ tr:hover td:first-child{background:var(--bg2)}
         <div style="font-size:13px;font-weight:500;color:var(--mega-txt)">MegaFllex Auditoria</div>
         <div style="font-size:10px;color:var(--mega-sub)" id="mega-user-nome">Administrador master</div>
       </div>
+      <button onclick="ciclarTema()" id="btn-tema-topo" title="Alternar tema" style="border:0.5px solid var(--mega-brd);background:var(--bg);border-radius:var(--r);cursor:pointer;padding:4px 8px;font-size:14px;color:var(--mega-txt)">☀️</button>
     </div>
     <div class="inner">
       <div class="tab-bar">
@@ -344,6 +371,36 @@ function fFundo(e){if(e.target.classList.contains('modal-backdrop'))fecharModal(
 function mascaraCNPJ(el){let v=el.value.replace(/\D/g,'').slice(0,14);if(v.length>12)v=v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,'$1.$2.$3/$4-$5');else if(v.length>8)v=v.replace(/(\d{2})(\d{3})(\d{3})(\d+)/,'$1.$2.$3/$4');else if(v.length>5)v=v.replace(/(\d{2})(\d{3})(\d+)/,'$1.$2.$3');else if(v.length>2)v=v.replace(/(\d{2})(\d+)/,'$1.$2');el.value=v;}
 
 // AUTH
+// TEMA
+function setTema(tema){
+  localStorage.setItem('megafllex_tema', tema);
+  document.documentElement.setAttribute('data-tema', tema);
+  const icons={claro:'☀️',escuro:'🌙',sistema:'⚙️'};
+  // Atualizar botão do topo se existir
+  const btnTopo=document.getElementById('btn-tema-topo');
+  if(btnTopo)btnTopo.textContent=icons[tema]||'☀️';
+  // Destacar botão ativo no login
+  ['claro','escuro','sistema'].forEach(t=>{
+    const btn=document.getElementById('btn-'+t);
+    if(btn){
+      btn.style.background=t===tema?'var(--mega)':'var(--bg2)';
+      btn.style.color=t===tema?'var(--mega-txt)':'var(--txt2)';
+      btn.style.borderColor=t===tema?'var(--mega-brd)':'var(--brd2)';
+      btn.style.fontWeight=t===tema?'600':'400';
+    }
+  });
+}
+function ciclarTema(){
+  const atual=localStorage.getItem('megafllex_tema')||'sistema';
+  const ordem=['claro','escuro','sistema'];
+  const prox=ordem[(ordem.indexOf(atual)+1)%3];
+  setTema(prox);
+}
+function carregarTema(){
+  const tema=localStorage.getItem('megafllex_tema')||'sistema';
+  setTema(tema);
+}
+
 function toggleSenha(){
   const el=document.getElementById('l-senha');
   const btn=document.getElementById('btn-olho');
@@ -834,6 +891,7 @@ async function imprimirRelatorio(origem){
 }
 
 // SESSÃO
+carregarTema();
 (async()=>{
   const {data:{session}}=await sb.auth.getSession();
   if(session){uAt=session.user;await carregarCampos();await carregarPerfil();}
