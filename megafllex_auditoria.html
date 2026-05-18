@@ -80,7 +80,9 @@ tr:hover td{background:var(--bg2)}
 tr:hover td:first-child{background:var(--bg2)}
 .total-row td{background:var(--bg2)!important;font-weight:500;border-top:0.5px solid var(--brd2)}
 .cel-prop{background:#FFF3CD!important;border-bottom:2px solid #E6A817!important}
-.cel-oper{background:#FFD6D6!important;border-bottom:2px solid #D85A30!important}.cel-prop.neg,.cel-oper.neg{color:#c0392b!important}.cel-prop.pos,.cel-oper.pos{color:#1D9E75!important}
+.cel-oper{background:#FFD6D6!important;border-bottom:2px solid #D85A30!important}
+.cel-mega{background:#EEEDFE!important;border-bottom:2px solid #AFA9EC!important}
+.cel-prop.neg,.cel-oper.neg,.cel-mega.neg{color:#c0392b!important}.cel-prop.pos,.cel-oper.pos,.cel-mega.pos{color:#1D9E75!important}
 .badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:var(--r);font-size:10px;font-weight:500}
 .b-ok{background:var(--ok-bg);color:var(--ok-txt)}.b-diff{background:var(--diff-bg);color:var(--diff-txt)}
 .b-prop{background:var(--prop);color:var(--prop-txt);border:0.5px solid var(--prop-brd)}
@@ -271,6 +273,7 @@ tr:hover td:first-child{background:var(--bg2)}
         <div class="legenda">
           <div class="leg-item"><div class="leg-box" style="background:#FFF3CD;border-color:#E6A817"></div>Proprietário</div>
           <div class="leg-item"><div class="leg-box" style="background:#FFD6D6;border-color:#D85A30"></div>Operador</div>
+          <div class="leg-item"><div class="leg-box" style="background:#EEEDFE;border-color:#AFA9EC"></div>Op. MegaFllex</div>
         </div>
         <div class="tbl-wrap"><table><thead id="m-lanc-head"></thead><tbody id="m-lanc-body"></tbody></table></div>
       </div>
@@ -359,6 +362,7 @@ tr:hover td:first-child{background:var(--bg2)}
           <div class="legenda" style="margin:0">
             <div class="leg-item"><div class="leg-box" style="background:#FFF3CD;border-color:#E6A817"></div>Editado por você</div>
             <div class="leg-item"><div class="leg-box" style="background:#FFD6D6;border-color:#D85A30"></div>Pelo operador</div>
+            <div class="leg-item"><div class="leg-box" style="background:#EEEDFE;border-color:#AFA9EC"></div>Op. MegaFllex</div>
           </div>
           <div style="display:flex;gap:6px">
             <button class="btn" id="btn-zeros-emp" onclick="toggleZeros('emp')" style="font-size:11px;padding:5px 10px">👁️ Ocultar zeros</button>
@@ -862,14 +866,16 @@ async function buildTable(hEl,bEl,rows,comEdit,quem){
       const rv=vs[c.label];const v=c.tipo==='moeda'?(parseFloat(rv)||0):(rv||'ok');
       if(c.tipo==='moeda')tots[c.label]+=(parseFloat(rv)||0);
       const ep=cEd[c.label];const ne=nEd[c.label]||'';
-      const cc=ep==='proprietario'?'cel-prop':(ep==='operador'||ep==='op_mega'||ep==='megafllex')?'cel-oper':'';
+      const cc=ep==='proprietario'?'cel-prop':ep==='operador'?'cel-oper':(ep==='op_mega'||ep==='megafllex')?'cel-mega':'';
       const ic=ep?' <span style="font-size:9px" title="Editado por: '+ne+'">✎</span>':'';
       tds+='<td class="'+(c.tipo==='moeda'?cls(v):'')+' '+cc+'" style="'+(c.tipo==='moeda'&&v<0?'color:#c0392b;font-weight:500':c.tipo==='moeda'&&v>0?'color:#1D9E75;font-weight:500':'')+' " title="'+(ep?'Editado por: '+ne:'')+'">'+fR(v)+ic+'</td>';
     });
     let st='';
+    const temM=Object.values(cEd).some(v=>v==='op_mega'||v==='megafllex');
     if(temP)st+='<span class="badge b-prop">✎ prop.</span> ';
-    if(temO)st+='<span class="badge b-oper">✎ oper.</span>';
-    if(!temP&&!temO)st=Math.abs(tot)<0.5?'<span class="badge b-ok">ok</span>':'<span class="badge b-diff">dif.</span>';
+    if(temO)st+='<span class="badge b-oper">✎ oper.</span> ';
+    if(temM)st+='<span class="badge" style="background:#EEEDFE;color:#3C3489;border:0.5px solid #AFA9EC">✎ mega</span>';
+    if(!temP&&!temO&&!temM)st=Math.abs(tot)<0.5?'<span class="badge b-ok">ok</span>':'<span class="badge b-diff">dif.</span>';
     tds+='<td class="'+cls(tot)+'">'+fT(tot)+'</td><td>'+st+'</td>';
     if(comEdit)tds+='<td><button onclick="abrirEdit(\''+l.id+'\',\''+quem+'\')" class="btn-sm" title="Editar">✏️</button></td>';
     return'<tr>'+tds+'</tr>';
@@ -1130,7 +1136,7 @@ async function salvarEdicao(){
   const {error}=await sb.from('lancamentos').update({valores:nv,total_dif:nT}).eq('id',eLancId);
   if(error){alert('Erro ao salvar: '+error.message);return;}
   const ts=agr().toISOString();
-  const papel=eQuem==='empresa'?'proprietario':(eQuem==='filial'?'operador':(pAt.papel==='proprietario'?'proprietario':'operador'));
+  const papel=eQuem==='empresa'?'proprietario':eQuem==='filial'?'operador':eQuem==='opmega'?'op_mega':pAt.papel||'operador';
   await sb.from('audit_log').insert(mud.map(m=>({lancamento_id:eLancId,empresa_id:l.empresa_id,filial_id:l.filial_id,mes_ano:l.mes_ano,data_lanc:l.data_lanc,campo_label:m.campo,valor_antes:m.antes,valor_depois:m.depois,editado_por:uAt.id,papel_editor:papel,nome_editor:pAt.nome||papel,editado_em:ts})));
   voltarEdit();
 }
