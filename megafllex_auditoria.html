@@ -129,7 +129,7 @@ tr:hover td:first-child{background:var(--bg2)}
   <div class="login-wrap">
     <div class="login-card">
       <div style="text-align:center;margin-bottom:1.5rem">
-        <div style="margin:0 auto 10px;width:56px;height:56px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="56" height="56">
+        <div style="margin:0 auto 10px;width:40px;height:40px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="40" height="40">
   <defs>
     <linearGradient id="face_login" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" stop-color="#0A2A5E"></stop>
@@ -717,10 +717,18 @@ function omAtualizaFiliais(){
 async function omCarregarLanc(){
   const fId=document.getElementById('om-sel-fil').value;
   const mes=document.getElementById('om-sel-mes').value;
-  if(!fId){alert('Selecione empresa e filial');return;}
+  if(!fId||!mes){
+    document.getElementById('om-lanc-body').innerHTML='<tr><td colspan="10" style="text-align:center;padding:16px;color:var(--txt2)">Selecione empresa, filial e mês para buscar.</td></tr>';
+    return;
+  }
   document.getElementById('om-lanc-body').innerHTML='<tr><td colspan="10">'+ld('Buscando...')+'</td></tr>';
-  const {data}=await sb.from('lancamentos').select('*').eq('filial_id',fId).eq('mes_ano',mes).order('data_lanc');
-  await buildTable(document.getElementById('om-lanc-head'),document.getElementById('om-lanc-body'),data||[],true,'opmega');
+  try{
+    const {data,error}=await sb.from('lancamentos').select('*').eq('filial_id',fId).eq('mes_ano',mes).order('data_lanc');
+    if(error)throw error;
+    await buildTable(document.getElementById('om-lanc-head'),document.getElementById('om-lanc-body'),data||[],true,'opmega');
+  }catch(e){
+    document.getElementById('om-lanc-body').innerHTML='<tr><td colspan="10" style="text-align:center;padding:16px;color:var(--neg)">Erro ao buscar: '+e.message+'</td></tr>';
+  }
 }
 function renderFormOpMega(){
   const g={};camC.forEach(c=>{if(!g[c.grupo])g[c.grupo]=[];g[c.grupo].push(c);});
