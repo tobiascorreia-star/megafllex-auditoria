@@ -168,6 +168,7 @@ tr:hover td:first-child{background:var(--bg2)}
         <button class="tab" onclick="mTab('lancamentos',this)">📋 Lançamentos</button>
         <button class="tab" onclick="mTab('auditoria',this)"><span style="filter:hue-rotate(200deg) saturate(2)">🛡️</span> Auditoria</button>
         <button class="tab" onclick="mTab('campos',this)">⚙️ Campos</button>
+        <button class="tab" onclick="mTab('equipe',this)">👥 Equipe</button>
       </div>
       <div id="m-dashboard">
         <div class="grid4" id="m-dash-cards"></div>
@@ -203,6 +204,21 @@ tr:hover td:first-child{background:var(--bg2)}
         <div class="sect">Log global de todas as edições</div>
         <div id="m-audit-lista"></div>
       </div>
+      <div id="m-equipe" style="display:none">
+        <div class="notice n-mega">Cadastre aqui os <strong>Operadores MegaFllex</strong> — funcionários internos com acesso a todas as empresas.</div>
+        <div style="background:var(--bg2);border-radius:var(--rl);padding:14px;margin-bottom:12px">
+          <div class="sect" style="margin-top:0">Novo Operador MegaFllex</div>
+          <div class="grid2" style="margin-bottom:8px">
+            <div class="irow"><label>Nome completo</label><input type="text" id="eq-nome" placeholder="Ex: João Silva"></div>
+            <div class="irow"><label>E-mail</label><input type="email" id="eq-email" placeholder="joao@megafllex.com"></div>
+          </div>
+          <button class="btn" onclick="criarOpMega()" style="width:100%">+ Cadastrar Operador MegaFllex</button>
+          <div id="eq-fb" style="margin-top:8px;font-size:12px;display:none"></div>
+        </div>
+        <div class="sect">Operadores MegaFllex cadastrados</div>
+        <div id="eq-lista"></div>
+      </div>
+
       <div id="m-campos" style="display:none">
         <div class="notice n-mega">Somente a MegaFllex pode adicionar ou remover campos.</div>
         <div class="sect">Campos ativos</div>
@@ -431,6 +447,32 @@ function fFundo(e){if(e.target.classList.contains('modal-backdrop'))fecharModal(
 function mascaraCNPJ(el){let v=el.value.replace(/\D/g,'').slice(0,14);if(v.length>12)v=v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,'$1.$2.$3/$4-$5');else if(v.length>8)v=v.replace(/(\d{2})(\d{3})(\d{3})(\d+)/,'$1.$2.$3/$4');else if(v.length>5)v=v.replace(/(\d{2})(\d{3})(\d+)/,'$1.$2.$3');else if(v.length>2)v=v.replace(/(\d{2})(\d+)/,'$1.$2');el.value=v;}
 
 // AUTH
+// RESET DE SENHA
+function infoResetSenha(empNome){
+  abrirModal('<div class="modal-box" onclick="event.stopPropagation()">'+
+    '<div class="modal-handle"></div>'+
+    '<div class="modal-header"><h3>🔑 Resetar senha</h3></div>'+
+    '<div class="notice n-mega">Informe o e-mail do usuário de <strong>'+empNome+'</strong> para enviar o link de redefinição:</div>'+
+    '<div class="irow" style="margin-top:8px"><label>E-mail do usuário</label><input type="email" id="reset-email" placeholder="email@dominio.com" style="padding:8px 10px;border:0.5px solid var(--brd2);border-radius:var(--r);background:var(--bg);color:var(--txt);font-size:14px;width:100%;font-family:inherit"></div>'+
+    '<div class="modal-footer">'+
+    '<button class="btn" style="flex:1;color:var(--txt2)" onclick="fecharModal()">Cancelar</button>'+
+    '<button class="btn" style="flex:1" onclick="enviarResetSenha()">📧 Enviar link</button>'+
+    '</div>'+
+    '<div id="reset-fb" style="margin-top:8px;font-size:12px;display:none"></div>'+
+  '</div>');
+}
+async function enviarResetSenha(){
+  const email=document.getElementById('reset-email')?.value?.trim();
+  const fb=document.getElementById('reset-fb');
+  if(!email){alert('Informe o e-mail');return;}
+  fb.style.display='block';fb.style.color='var(--txt2)';fb.textContent='⏳ Enviando...';
+  const {error}=await sb.auth.resetPasswordForEmail(email,{
+    redirectTo:window.location.origin+window.location.pathname
+  });
+  if(error){fb.style.color='var(--neg)';fb.textContent='❌ '+error.message;}
+  else{fb.style.color='var(--pos)';fb.textContent='✅ Link enviado para '+email+'!';}
+}
+
 // GERA SENHA ALEATÓRIA FORTE
 function geraSenha(){
   const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
@@ -602,12 +644,51 @@ function mAtualizaFiliais(){
 }
 function mTab(t,btn){
   document.querySelectorAll('#s-mega .tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
-  ['dashboard','empresas','lancamentos','auditoria','campos'].forEach(x=>document.getElementById('m-'+x).style.display='none');
+  ['dashboard','empresas','lancamentos','auditoria','campos','equipe'].forEach(x=>document.getElementById('m-'+x).style.display='none');
   document.getElementById('m-'+t).style.display='block';
   if(t==='auditoria')renderAuditMega();
   if(t==='campos')renderCampos();
   if(t==='empresas')renderEmps();
   if(t==='dashboard')renderDash();
+  if(t==='equipe')renderEquipe();
+}
+
+async function renderEquipe(){
+  const el=document.getElementById('eq-lista');
+  el.innerHTML=ld('Carregando...');
+  const {data}=await sb.from('perfis').select('*').eq('papel','op_mega');
+  if(!data||!data.length){el.innerHTML='<div style="font-size:13px;color:var(--txt2);padding:16px 0;text-align:center">Nenhum operador cadastrado ainda.</div>';return;}
+  el.innerHTML=data.map(p=>'<div class="emp-card" style="display:flex;align-items:center;gap:12px">'+
+    '<div class="avatar" style="background:#E6F1FB;color:#185FA5;width:36px;height:36px;font-size:13px;flex-shrink:0">⚙️</div>'+
+    '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">'+p.nome+'</div><div style="font-size:11px;color:var(--txt2)">Operador MegaFllex · acesso total</div></div>'+
+    '<button class="btn-sm" style="color:var(--neg)" onclick="removerOpMega(this.dataset.id,this.dataset.nome)" data-id="'+p.user_id+'" data-nome="'+p.nome+'">🗑️</button>'+
+    '</div>').join('');
+}
+
+async function criarOpMega(){
+  const nome=document.getElementById('eq-nome').value.trim();
+  const email=document.getElementById('eq-email').value.trim();
+  const fb=document.getElementById('eq-fb');
+  if(!nome||!email){alert('Preencha nome e e-mail');return;}
+  fb.style.display='block';fb.style.color='var(--txt2)';fb.textContent='⏳ Criando usuário...';
+  const senha=geraSenha();
+  const {data:u,error:e}=await sb.auth.signUp({email,password:senha,options:{data:{nome}}});
+  if(e){fb.style.color='var(--neg)';fb.textContent='❌ '+e.message;return;}
+  if(u?.user){
+    await sb.from('perfis').insert({user_id:u.user.id,papel:'op_mega',empresa_id:null,filial_id:null,nome});
+    document.getElementById('eq-nome').value='';
+    document.getElementById('eq-email').value='';
+    fb.style.color='var(--pos)';
+    fb.innerHTML='✅ Operador criado! <strong>'+email+'</strong> · Senha: <code style="background:var(--bg2);padding:2px 6px;border-radius:4px">'+senha+'</code>';
+    renderEquipe();
+  }
+}
+
+async function removerOpMega(userId,nome){
+  if(!confirm('Remover operador '+nome+'?'))return;
+  await sb.from('perfis').delete().eq('user_id',userId);
+  await sb.auth.admin?.deleteUser(userId);
+  renderEquipe();
 }
 async function renderDash(){
   const {data:l}=await sb.from('lancamentos').select('total_dif,empresa_id');
