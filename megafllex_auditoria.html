@@ -855,14 +855,14 @@ async function buildTable(hEl,bEl,rows,comEdit,quem){
   const html=rows.map(l=>{
     const vs=l.valores||{};const tot=l.total_dif||0;tg+=tot;
     const cEd=eMap[l.id]||{};const nEd=nMap[l.id]||{};
-    const temP=Object.values(cEd).includes('proprietario');
-    const temO=Object.values(cEd).includes('operador');
+    const temP=Object.values(cEd).some(v=>v==='proprietario');
+    const temO=Object.values(cEd).some(v=>v==='operador'||v==='op_mega'||v==='megafllex');
     let tds='<td style="text-align:left">'+l.data_lanc?.slice(8,10)+'/'+l.data_lanc?.slice(5,7)+'</td>';
     camC.forEach(c=>{
       const rv=vs[c.label];const v=c.tipo==='moeda'?(parseFloat(rv)||0):(rv||'ok');
       if(c.tipo==='moeda')tots[c.label]+=(parseFloat(rv)||0);
       const ep=cEd[c.label];const ne=nEd[c.label]||'';
-      const cc=ep==='proprietario'?'cel-prop':ep==='operador'?'cel-oper':'';
+      const cc=ep==='proprietario'?'cel-prop':(ep==='operador'||ep==='op_mega'||ep==='megafllex')?'cel-oper':'';
       const ic=ep?' <span style="font-size:9px" title="Editado por: '+ne+'">✎</span>':'';
       tds+='<td class="'+(c.tipo==='moeda'?cls(v):'')+' '+cc+'" style="'+(c.tipo==='moeda'&&v<0?'color:#c0392b;font-weight:500':c.tipo==='moeda'&&v>0?'color:#1D9E75;font-weight:500':'')+' " title="'+(ep?'Editado por: '+ne:'')+'">'+fR(v)+ic+'</td>';
     });
@@ -1098,7 +1098,7 @@ async function abrirEdit(id,quem){
   eLancId=id;eQuem=quem;
   const {data:l}=await sb.from('lancamentos').select('*').eq('id',id).single();
   eOrig=JSON.parse(JSON.stringify(l));
-  const isE=quem==='empresa';
+  const isE=quem==='empresa'||pAt.papel==='proprietario';
   document.getElementById('edit-outer').style.borderColor=isE?'var(--prop-brd)':'var(--oper-brd)';
   const tb=document.getElementById('edit-topbar');tb.style.background=isE?'var(--prop)':'var(--oper)';tb.style.borderRadius='12px 12px 0 0';
   const bb=document.getElementById('edit-back-btn');bb.style.borderColor=isE?'var(--prop-brd)':'var(--oper-brd)';bb.style.color=isE?'var(--prop-txt)':'var(--oper-txt)';
@@ -1130,7 +1130,7 @@ async function salvarEdicao(){
   const {error}=await sb.from('lancamentos').update({valores:nv,total_dif:nT}).eq('id',eLancId);
   if(error){alert('Erro ao salvar: '+error.message);return;}
   const ts=agr().toISOString();
-  const papel=eQuem==='empresa'?'proprietario':'operador';
+  const papel=eQuem==='empresa'?'proprietario':(eQuem==='filial'?'operador':(pAt.papel==='proprietario'?'proprietario':'operador'));
   await sb.from('audit_log').insert(mud.map(m=>({lancamento_id:eLancId,empresa_id:l.empresa_id,filial_id:l.filial_id,mes_ano:l.mes_ano,data_lanc:l.data_lanc,campo_label:m.campo,valor_antes:m.antes,valor_depois:m.depois,editado_por:uAt.id,papel_editor:papel,nome_editor:pAt.nome||papel,editado_em:ts})));
   voltarEdit();
 }
