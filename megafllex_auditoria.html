@@ -310,6 +310,66 @@ tr:hover td:first-child{background:var(--bg2)}
   </div></div>
 </div>
 
+<!-- OPERADOR MEGAFLLEX -->
+<div id="s-opmega" class="screen">
+  <div class="app"><div class="card" style="border-color:#5B9BD5">
+    <div class="topbar" style="background:#E6F1FB;border-radius:var(--rl) var(--rl) 0 0">
+      <button onclick="confirmarSaida()" class="btn-sair" style="border-color:#5B9BD5;color:#185FA5">⬅ Sair</button>
+      <div class="avatar" style="background:#E6F1FB;color:#185FA5">⚙️</div>
+      <div class="topbar-info">
+        <div style="font-size:13px;font-weight:500;color:#185FA5" id="opmega-nome-top">Operador MegaFllex</div>
+        <div style="font-size:10px;color:#185FA5">Acesso a todas as empresas</div>
+      </div>
+      <button onclick="ciclarTema()" style="border:0.5px solid #5B9BD5;background:var(--bg);border-radius:var(--r);cursor:pointer;padding:4px 8px;font-size:14px;color:#185FA5" id="btn-tema-opmega">☀️</button>
+    </div>
+    <div class="inner">
+      <div class="tab-bar">
+        <button class="tab active" onclick="omTab('lancamentos',this)">📋 Lançamentos</button>
+        <button class="tab" onclick="omTab('auditoria',this)">🛡️ Auditoria</button>
+      </div>
+      <div id="om-lancamentos">
+        <div class="notice" style="background:#E6F1FB;color:#185FA5">Selecione a empresa e filial para lançar ou visualizar.</div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:flex-end">
+          <div class="irow" style="margin:0;flex:1;min-width:130px"><label>Empresa</label>
+            <select id="om-sel-emp" onchange="omAtualizaFiliais()"><option value="">Selecione...</option></select>
+          </div>
+          <div class="irow" style="margin:0;flex:1;min-width:130px"><label>Filial</label>
+            <select id="om-sel-fil"><option value="">Selecione...</option></select>
+          </div>
+          <div class="irow" style="margin:0;flex:1;min-width:130px"><label>Mês/Ano</label>
+            <select id="om-sel-mes"></select>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">
+          <div class="legenda" style="margin:0">
+            <div class="leg-item"><div class="leg-box" style="background:#FFF3CD;border-color:#E6A817"></div>Proprietário</div>
+            <div class="leg-item"><div class="leg-box" style="background:#FFD6D6;border-color:#D85A30"></div>Operador</div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn" id="btn-zeros-opmega" onclick="toggleZeros('opmega')" style="font-size:11px;padding:5px 10px">👁️ Ocultar zeros</button>
+            <button class="btn" onclick="imprimirRelatorio('opmega')" style="font-size:11px;padding:5px 10px">🖨️ Imprimir</button>
+          </div>
+        </div>
+        <button class="btn" onclick="omCarregarLanc()" style="margin-bottom:10px;width:100%">🔍 Buscar lançamentos</button>
+        <div class="tbl-wrap"><table><thead id="om-lanc-head"></thead><tbody id="om-lanc-body"></tbody></table></div>
+        <div style="margin-top:10px">
+          <div class="sect">Lançar novo dia</div>
+          <div class="notice n-oper">Lançamentos como <strong>Operador MegaFllex</strong> — registrados na auditoria.</div>
+          <div class="irow"><label>Data</label><input type="date" id="om-data"></div>
+          <div id="om-form-campos"></div>
+          <button class="btn" style="width:100%;margin-top:4px;padding:12px" onclick="omSalvarLanc()">💾 Salvar lançamento</button>
+          <div id="om-fb" style="margin-top:8px;font-size:12px;color:var(--pos);display:none">✅ Lançamento salvo!</div>
+        </div>
+      </div>
+      <div id="om-auditoria" style="display:none">
+        <div class="sect">Log de auditoria global</div>
+        <div id="om-audit-lista"></div>
+      </div>
+    </div>
+    <div class="rodape">© 2026 · MegaFllex Soluções</div>
+  </div></div>
+</div>
+
 <!-- EDIÇÃO -->
 <div id="s-edit" class="screen">
   <div class="app"><div class="card" id="edit-outer">
@@ -339,7 +399,7 @@ const sb=supabase.createClient(SURL,SKEY,{auth:{autoRefreshToken:true,persistSes
 
 let uAt=null,pAt=null,empC=[],camC=[];
 let eLancId=null,eOrig=null,eQuem='';
-const zeros={fil:false,emp:false,mega:false};
+const zeros={fil:false,emp:false,mega:false,opmega:false};
 
 function agr(){return new Date(new Date().toLocaleString('en-US',{timeZone:'America/Sao_Paulo'}));}
 function hoje(){const d=agr();return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());}
@@ -446,6 +506,7 @@ async function carregarPerfil(){
   pAt=d;btn.textContent='Entrar';
   await carregarCampos();
   if(d.papel==='megafllex')await iniciarMega();
+  else if(d.papel==='op_mega')await iniciarOpMega();
   else if(d.papel==='proprietario')await iniciarEmpresa();
   else await iniciarFilial();
 }
@@ -464,6 +525,69 @@ async function iniciarMega(){
   empC=data||[];
   preSelMega();await renderDash();renderEmps();renderCampos();
   show('s-mega');
+}
+// OPERADOR MEGAFLLEX
+async function iniciarOpMega(){
+  document.getElementById('opmega-nome-top').textContent=pAt.nome||'Operador MegaFllex';
+  const {data}=await sb.from('empresas').select('*, filiais(*)').eq('ativa',true);
+  empC=data||[];
+  document.getElementById('om-sel-emp').innerHTML='<option value="">Selecione...</option>'+empC.map(e=>'<option value="'+e.id+'">'+e.nome+'</option>').join('');
+  const sm=document.getElementById('om-sel-mes');
+  sm.innerHTML=MESES.map(m=>'<option value="'+m+'">'+m+'</option>').join('');
+  sm.value=mesAtual();
+  document.getElementById('om-data').value=hoje();
+  renderFormOpMega();
+  const tema=localStorage.getItem('megafllex_tema')||'sistema';
+  const icons={claro:'☀️',escuro:'🌙',sistema:'⚙️'};
+  const btnT=document.getElementById('btn-tema-opmega');
+  if(btnT)btnT.textContent=icons[tema];
+  show('s-opmega');
+}
+function omAtualizaFiliais(){
+  const eId=document.getElementById('om-sel-emp').value;
+  const emp=empC.find(e=>e.id===eId);
+  document.getElementById('om-sel-fil').innerHTML=emp
+    ?'<option value="">Selecione...</option>'+(emp.filiais||[]).map(f=>'<option value="'+f.id+'">'+f.nome+'</option>').join('')
+    :'<option value="">Selecione a empresa primeiro</option>';
+}
+async function omCarregarLanc(){
+  const fId=document.getElementById('om-sel-fil').value;
+  const mes=document.getElementById('om-sel-mes').value;
+  if(!fId){alert('Selecione empresa e filial');return;}
+  document.getElementById('om-lanc-body').innerHTML='<tr><td colspan="10">'+ld('Buscando...')+'</td></tr>';
+  const {data}=await sb.from('lancamentos').select('*').eq('filial_id',fId).eq('mes_ano',mes).order('data_lanc');
+  await buildTable(document.getElementById('om-lanc-head'),document.getElementById('om-lanc-body'),data||[],true,'opmega');
+}
+function renderFormOpMega(){
+  const g={};camC.forEach(c=>{if(!g[c.grupo])g[c.grupo]=[];g[c.grupo].push(c);});
+  let h='';
+  Object.entries(g).forEach(([gr,cs])=>{
+    h+='<div class="grupo-titulo">📁 '+gr+'</div><div class="grid2">';
+    cs.forEach(c=>{h+='<div class="irow"><label>'+c.label+'</label>'+(c.tipo==='moeda'?'<div class="input-brl"><span class="prefix">R$</span><input type="text" id="om-fl-'+c.id+'" placeholder="0,00" inputmode="decimal"></div>':'<input type="text" id="om-fl-'+c.id+'" placeholder="ok">')+'</div>';});
+    h+='</div>';
+  });
+  document.getElementById('om-form-campos').innerHTML=h;
+  camC.filter(c=>c.tipo==='moeda').forEach(c=>{const el=document.getElementById('om-fl-'+c.id);if(el)mBRL(el);});
+}
+async function omSalvarLanc(){
+  const eId=document.getElementById('om-sel-emp').value;
+  const fId=document.getElementById('om-sel-fil').value;
+  const dv=document.getElementById('om-data').value;
+  if(!eId||!fId){alert('Selecione empresa e filial');return;}
+  if(!dv){alert('Informe a data');return;}
+  const mesAno=mDA(dv);
+  const valores={};let total=0;
+  camC.forEach(c=>{const el=document.getElementById('om-fl-'+c.id);if(!el)return;const v=c.tipo==='moeda'?pBRL(el.value):(el.value||'ok');valores[c.label]=String(v);if(c.tipo==='moeda')total+=parseFloat(v)||0;});
+  const {error}=await sb.from('lancamentos').upsert({empresa_id:eId,filial_id:fId,mes_ano:mesAno,data_lanc:dv,valores,total_dif:total,criado_por:uAt.id},{onConflict:'filial_id,data_lanc'});
+  if(error){alert('Erro: '+error.message);return;}
+  camC.forEach(c=>{const el=document.getElementById('om-fl-'+c.id);if(el)el.value='';});
+  const fb=document.getElementById('om-fb');fb.style.display='block';setTimeout(()=>fb.style.display='none',2500);
+}
+function omTab(t,btn){
+  document.querySelectorAll('#s-opmega .tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  ['lancamentos','auditoria'].forEach(x=>document.getElementById('om-'+x).style.display='none');
+  document.getElementById('om-'+t).style.display='block';
+  if(t==='auditoria'){const el=document.getElementById('om-audit-lista');el.innerHTML=ld('Carregando...');sb.from('audit_log').select('*').order('editado_em',{ascending:false}).limit(50).then(({data})=>el.innerHTML=buildAuditHtml(data||[]));}
 }
 function preSelMega(){
   document.getElementById('m-sel-emp').innerHTML='<option value="">Selecione...</option>'+empC.map(e=>'<option value="'+e.id+'">'+e.nome+'</option>').join('');
@@ -702,8 +826,8 @@ function toggleZeros(ctx){
   zeros[ctx]=!zeros[ctx];
   const btn=document.getElementById('btn-zeros-'+ctx);
   if(btn)btn.textContent=zeros[ctx]?'👁️ Mostrar zeros':'👁️ Ocultar zeros';
-  const hIds={fil:'f-hist-head',emp:'e-lanc-head',mega:'m-lanc-head'};
-  const bIds={fil:'f-hist-body',emp:'e-lanc-body',mega:'m-lanc-body'};
+  const hIds={fil:'f-hist-head',emp:'e-lanc-head',mega:'m-lanc-head',opmega:'om-lanc-head'};
+  const bIds={fil:'f-hist-body',emp:'e-lanc-body',mega:'m-lanc-body',opmega:'om-lanc-body'};
   const hEl=document.getElementById(hIds[ctx]);
   const bEl=document.getElementById(bIds[ctx]);
   if(!hEl||!bEl)return;
@@ -760,7 +884,11 @@ async function salvarEdicao(){
   voltarEdit();
 }
 document.getElementById('edit-save-btn').onclick=salvarEdicao;
-function voltarEdit(){if(eQuem==='empresa'){eCarregarLanc();show('s-empresa');}else{fCarregarHist();show('s-filial');}}
+function voltarEdit(){
+  if(eQuem==='empresa'){eCarregarLanc();show('s-empresa');}
+  else if(eQuem==='opmega'){omCarregarLanc();show('s-opmega');}
+  else{fCarregarHist();show('s-filial');}
+}
 
 // AUDITORIA
 function buildAuditHtml(logs){
@@ -784,6 +912,12 @@ async function imprimirRelatorio(origem){
     const {data:fil}=await sb.from('filiais').select('*, empresas(nome)').eq('id',pAt.filial_id).single();
     filN=fil?.nome||'';empN=fil?.empresas?.nome||'';mesN=mes;titulo='Relatório de Lançamentos';
     const {data}=await sb.from('lancamentos').select('*').eq('filial_id',pAt.filial_id).eq('mes_ano',mes).order('data_lanc');rows=data||[];
+  }else if(origem==='opmega'){
+    const fId=document.getElementById('om-sel-fil').value;const mes=document.getElementById('om-sel-mes').value;
+    const eId=document.getElementById('om-sel-emp').value;
+    const emp=empC.find(e=>e.id===eId);const fil=emp?.filiais?.find(f=>f.id===fId);
+    filN=fil?.nome||'';empN=emp?.nome||'';mesN=mes;titulo='Relatório — Operador MegaFllex';
+    const {data}=await sb.from('lancamentos').select('*').eq('filial_id',fId).eq('mes_ano',mes).order('data_lanc');rows=data||[];
   }else{
     const fId=document.getElementById('m-sel-fil').value;const mes=document.getElementById('m-sel-mes').value;
     const eId=document.getElementById('m-sel-emp').value;
