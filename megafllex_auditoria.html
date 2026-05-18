@@ -610,8 +610,8 @@ function geraSenha(){
 
 // TEMA
 function setTema(tema){
-  localStorage.setItem('megafllex_tema', tema);
-  document.documentElement.setAttribute('data-tema', tema);
+  try{localStorage.setItem('megafllex_tema', tema);}catch(e){}
+  if(document.documentElement)document.documentElement.setAttribute('data-tema', tema);
   const icons={claro:'☀️',escuro:'🌙',sistema:'⚙️'};
   // Atualizar botão do topo se existir
   const btnTopo=document.getElementById('btn-tema-topo');
@@ -1209,7 +1209,8 @@ async function imprimirRelatorio(origem){
 }
 
 // SESSÃO
-carregarTema();
+// Carregar tema e sessão quando DOM estiver pronto
+document.addEventListener('DOMContentLoaded',()=>carregarTema());
 (async()=>{
   const {data:{session}}=await sb.auth.getSession();
   if(session){uAt=session.user;await carregarCampos();await carregarPerfil();}
