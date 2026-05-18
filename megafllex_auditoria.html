@@ -1071,6 +1071,7 @@ async function salvarEmpresa(id){
     ),300);
   }
 
+}
 // OCULTAR ZEROS
 function toggleZeros(ctx){
   zeros[ctx]=!zeros[ctx];
@@ -1206,7 +1207,6 @@ async function imprimirRelatorio(origem){
   const w=window.open('','_blank','width=1200,height=800');w.document.write(html);w.document.close();w.onload=()=>w.print();
 }
 
-}
 
 // SESSÃO
 // Carregar tema e sessão quando DOM estiver pronto
