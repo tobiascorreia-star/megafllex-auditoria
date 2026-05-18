@@ -1330,6 +1330,54 @@ async function imprimirRelatorio(origem){
 }
 
 
+// EXPOR FUNÇÕES GLOBALMENTE (garantia)
+window.toggleZeros = toggleZeros;
+window.imprimirRelatorio = imprimirRelatorio;
+window.buildAuditHtml = buildAuditHtml;
+window.buildTable = buildTable;
+window.fazerLogin = fazerLogin;
+window.salvarEdicao = salvarEdicao;
+window.eCarregarLanc = eCarregarLanc;
+window.fCarregarHist = fCarregarHist;
+window.mCarregarLanc = mCarregarLanc;
+window.renderAuditMega = renderAuditMega;
+window.iniciarMega = iniciarMega;
+window.iniciarEmpresa = iniciarEmpresa;
+window.iniciarFilial = iniciarFilial;
+window.abrirEdit = abrirEdit;
+window.eTab = eTab;
+window.fTab = fTab;
+window.salvarLanc = salvarLanc;
+window.renderFormFilial = renderFormFilial;
+window.confirmarFilialOp = confirmarFilialOp;
+window.atualizarFiliaisOp = atualizarFiliaisOp;
+window.mostrarSeletorFilial = mostrarSeletorFilial;
+window.mTab = mTab;
+window.omTab = omTab;
+window.mAtualizaFiliais = mAtualizaFiliais;
+window.omAtualizaFiliais = omAtualizaFiliais;
+window.omCarregarLanc = omCarregarLanc;
+window.omSalvarLanc = omSalvarLanc;
+window.fazerLogin = fazerLogin;
+window.setTema = setTema;
+window.ciclarTema = ciclarTema;
+window.toggleSenha = toggleSenha;
+window.confirmarSaida = confirmarSaida;
+window.logout = logout;
+window.abrirModalEmpresa = abrirModalEmpresa;
+window.salvarEmpresa = salvarEmpresa;
+window.abrirModalCampo = abrirModalCampo;
+window.salvarCampo = salvarCampo;
+window.adicionarCampo = adicionarCampo;
+window.confirmarDelCampo = confirmarDelCampo;
+window.delCampo = delCampo;
+window.fecharModal = fecharModal;
+window.fFundo = fFundo;
+window.mascaraCNPJ = mascaraCNPJ;
+window.infoResetSenha = infoResetSenha;
+window.enviarResetSenha = enviarResetSenha;
+window.voltarEdit = voltarEdit;
+
 // SESSÃO
 // Carregar tema e sessão quando DOM estiver pronto
 document.addEventListener('DOMContentLoaded',()=>carregarTema());
