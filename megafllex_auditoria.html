@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>MegaFllex Auditoria</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
 <style>
@@ -82,7 +85,8 @@ tr:hover td:first-child{background:var(--bg2)}
 .cel-prop{background:#FFF3CD!important;border-bottom:2px solid #E6A817!important}
 .cel-oper{background:#FFD6D6!important;border-bottom:2px solid #D85A30!important}
 .cel-mega{background:#EEEDFE!important;border-bottom:2px solid #AFA9EC!important}
-.cel-prop.neg,.cel-oper.neg,.cel-mega.neg{color:#c0392b!important}.cel-prop.pos,.cel-oper.pos,.cel-mega.pos{color:#1D9E75!important}
+.cel-admin{background:#D8EBFF!important;border-bottom:2px solid #5B9BD5!important}
+.cel-prop.neg,.cel-oper.neg,.cel-mega.neg,.cel-admin.neg{color:#c0392b!important}.cel-prop.pos,.cel-oper.pos,.cel-mega.pos,.cel-admin.pos{color:#1D9E75!important}
 .badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:var(--r);font-size:10px;font-weight:500}
 .b-ok{background:var(--ok-bg);color:var(--ok-txt)}.b-diff{background:var(--diff-bg);color:var(--diff-txt)}
 .b-prop{background:var(--prop);color:var(--prop-txt);border:0.5px solid var(--prop-brd)}
@@ -172,7 +176,7 @@ tr:hover td:first-child{background:var(--bg2)}
         <button type="button" onclick="toggleSenha()" id="btn-olho" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer;color:var(--txt2);font-size:16px;padding:0;line-height:1">👁️</button>
       </div></div>
       <button class="btn" style="width:100%;margin-top:4px;padding:11px" onclick="fazerLogin()"><span id="login-txt">Entrar</span></button>
-      <div style="text-align:center;margin-top:14px;font-size:10px;color:var(--txt3)">© 2026 · MegaFllex Soluções · v0.1.3</div>
+      <div style="text-align:center;margin-top:14px;font-size:10px;color:var(--txt3)">© 2026 · MegaFllex Soluções · v0.1.4</div>
     </div>
   </div>
 </div>
@@ -274,6 +278,7 @@ tr:hover td:first-child{background:var(--bg2)}
           <div class="leg-item"><div class="leg-box" style="background:#FFF3CD;border-color:#E6A817"></div>Proprietário</div>
           <div class="leg-item"><div class="leg-box" style="background:#FFD6D6;border-color:#D85A30"></div>Operador</div>
           <div class="leg-item"><div class="leg-box" style="background:#EEEDFE;border-color:#AFA9EC"></div>Op. MegaFllex</div>
+          <div class="leg-item"><div class="leg-box" style="background:#D8EBFF;border-color:#5B9BD5"></div>MegaFllex Admin</div>
         </div>
         <div class="tbl-wrap"><table><thead id="m-lanc-head"></thead><tbody id="m-lanc-body"></tbody></table></div>
       </div>
@@ -364,6 +369,7 @@ tr:hover td:first-child{background:var(--bg2)}
             <div class="leg-item"><div class="leg-box" style="background:#FFF3CD;border-color:#E6A817"></div>Editado por você</div>
             <div class="leg-item"><div class="leg-box" style="background:#FFD6D6;border-color:#D85A30"></div>Pelo operador</div>
             <div class="leg-item"><div class="leg-box" style="background:#EEEDFE;border-color:#AFA9EC"></div>Op. MegaFllex</div>
+            <div class="leg-item"><div class="leg-box" style="background:#D8EBFF;border-color:#5B9BD5"></div>MegaFllex Admin</div>
           </div>
           <div style="display:flex;gap:6px">
             <button class="btn" id="btn-zeros-emp" onclick="toggleZeros('emp')" style="font-size:11px;padding:5px 10px">👁️ Ocultar zeros</button>
@@ -475,7 +481,7 @@ tr:hover td:first-child{background:var(--bg2)}
         <div class="notice" style="background:#E6F1FB;color:#185FA5">Selecione a empresa e filial para lançar ou visualizar.</div>
         <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:flex-end">
           <div class="irow" style="margin:0;flex:1;min-width:130px"><label>Empresa</label>
-            <select id="om-sel-emp" onchange="omAtualizaFiliais()"><option value="">Selecione...</option></select>
+            <select id="om-sel-emp" onchange="omAtualizaFiliais();document.getElementById('om-area-lancar').style.display='none';"><option value="">Selecione...</option></select>
           </div>
           <div class="irow" style="margin:0;flex:1;min-width:130px"><label>Filial</label>
             <select id="om-sel-fil"><option value="">Selecione...</option></select>
@@ -496,7 +502,7 @@ tr:hover td:first-child{background:var(--bg2)}
         </div>
         <button class="btn" onclick="omCarregarLanc()" style="margin-bottom:10px;width:100%">🔍 Buscar lançamentos</button>
         <div class="tbl-wrap"><table><thead id="om-lanc-head"></thead><tbody id="om-lanc-body"></tbody></table></div>
-        <div style="margin-top:10px">
+        <div id="om-area-lancar" style="margin-top:10px;display:none">
           <div class="sect">Lançar novo dia</div>
           <div class="notice n-oper">Lançamentos como <strong>Operador MegaFllex</strong> — registrados na auditoria.</div>
           <div class="irow"><label>Data</label><input type="date" id="om-data"></div>
@@ -725,7 +731,7 @@ async function omCarregarLanc(){
   const fId=document.getElementById('om-sel-fil').value;
   const mes=document.getElementById('om-sel-mes').value;
   if(!fId||!mes){
-    document.getElementById('om-lanc-body').innerHTML='<tr><td colspan="10" style="text-align:center;padding:16px;color:var(--txt2)">Selecione empresa, filial e mês para buscar.</td></tr>';
+    alert('Selecione empresa, filial e mês para buscar.');
     return;
   }
   document.getElementById('om-lanc-body').innerHTML='<tr><td colspan="10">'+ld('Buscando...')+'</td></tr>';
@@ -733,6 +739,8 @@ async function omCarregarLanc(){
     const {data,error}=await sb.from('lancamentos').select('*').eq('filial_id',fId).eq('mes_ano',mes).order('data_lanc');
     if(error)throw error;
     await buildTable(document.getElementById('om-lanc-head'),document.getElementById('om-lanc-body'),data||[],true,'opmega');
+    // Mostrar área de lançar novo dia após buscar
+    document.getElementById('om-area-lancar').style.display='block';
   }catch(e){
     document.getElementById('om-lanc-body').innerHTML='<tr><td colspan="10" style="text-align:center;padding:16px;color:var(--neg)">Erro ao buscar: '+e.message+'</td></tr>';
   }
@@ -961,6 +969,18 @@ function fTab(t,btn){
   if(t==='historico')fCarregarHist();
 }
 
+function confirmarDelEmp(id){
+  const emp=empC.find(e=>e.id===id);
+  if(!emp){alert('Empresa não encontrada');return;}
+  abrirModal('<div class="modal-box" onclick="event.stopPropagation()"><div class="modal-handle"></div><div class="modal-header"><h3>Remover empresa</h3><button onclick="fecharModal()" style="border:none;background:none;cursor:pointer;font-size:18px">×</button></div><div class="notice n-danger">Remover <strong>'+emp.nome+'</strong>? Esta ação desativa a empresa, mas mantém os dados históricos.</div><div class="modal-footer"><button class="btn" style="flex:1;color:var(--txt2)" onclick="fecharModal()">Cancelar</button><button class="btn-danger" style="flex:1" onclick="delEmp(\''+id+'\')">🗑️ Remover</button></div></div>');
+}
+async function delEmp(id){
+  await sb.from('empresas').update({ativa:false}).eq('id',id);
+  fecharModal();
+  const {data}=await sb.from('empresas').select('*, filiais(*)').eq('ativa',true);
+  empC=data||[];renderEmps();renderDash();preSelMega();
+}
+
 async function buildTable(hEl,bEl,rows,comEdit,quem){
   const nC=camC.length+3+(comEdit?1:0);
   let h='<tr><th style="text-align:left;min-width:65px">Data</th>';
@@ -985,16 +1005,18 @@ async function buildTable(hEl,bEl,rows,comEdit,quem){
       const rv=vs[c.label];const v=c.tipo==='moeda'?(parseFloat(rv)||0):(rv||'ok');
       if(c.tipo==='moeda')tots[c.label]+=(parseFloat(rv)||0);
       const ep=cEd[c.label];const ne=nEd[c.label]||'';
-      const cc=ep==='proprietario'?'cel-prop':ep==='operador'?'cel-oper':(ep==='op_mega'||ep==='megafllex')?'cel-mega':'';
+      const cc=ep==='proprietario'?'cel-prop':ep==='operador'?'cel-oper':ep==='op_mega'?'cel-mega':ep==='megafllex'?'cel-admin':'';
       const ic=ep?' <span style="font-size:9px" title="Editado por: '+ne+'">✎</span>':'';
       tds+='<td class="'+(c.tipo==='moeda'?cls(v):'')+' '+cc+'" style="'+(c.tipo==='moeda'&&v<0?'color:#c0392b;font-weight:500':c.tipo==='moeda'&&v>0?'color:#1D9E75;font-weight:500':'')+' " title="'+(ep?'Editado por: '+ne:'')+'">'+fR(v)+ic+'</td>';
     });
     let st='';
-    const temM=Object.values(cEd).some(v=>v==='op_mega'||v==='megafllex');
+    const temM=Object.values(cEd).some(v=>v==='op_mega');
+    const temA=Object.values(cEd).some(v=>v==='megafllex');
     if(temP)st+='<span class="badge b-prop">✎ prop.</span> ';
     if(temO)st+='<span class="badge b-oper">✎ oper.</span> ';
-    if(temM)st+='<span class="badge" style="background:#EEEDFE;color:#3C3489;border:0.5px solid #AFA9EC">✎ mega</span>';
-    if(!temP&&!temO&&!temM)st=Math.abs(tot)<0.5?'<span class="badge b-ok">ok</span>':'<span class="badge b-diff">dif.</span>';
+    if(temM)st+='<span class="badge" style="background:#EEEDFE;color:#3C3489;border:0.5px solid #AFA9EC">✎ op-mega</span> ';
+    if(temA)st+='<span class="badge" style="background:#D8EBFF;color:#185FA5;border:0.5px solid #5B9BD5">✎ admin</span>';
+    if(!temP&&!temO&&!temM&&!temA)st=Math.abs(tot)<0.5?'<span class="badge b-ok">ok</span>':'<span class="badge b-diff">dif.</span>';
     tds+='<td class="'+cls(tot)+'">'+fT(tot)+'</td><td>'+st+'</td>';
     if(comEdit)tds+='<td><button onclick="abrirEdit(\''+l.id+'\',\''+quem+'\')" class="btn-sm" title="Editar">✏️</button></td>';
     return'<tr>'+tds+'</tr>';
@@ -1130,12 +1152,28 @@ async function salvarEmpresa(id){
     if(error){alert('Erro ao criar empresa: '+error.message);return;}
     empId=data?.id;
   }
-  // Salvar filiais
+  // Salvar filiais (sem duplicar — diff entre o que existe e o que foi enviado)
   let filiaisIds=[];
   if(empId&&nomes.length){
-    if(id)await sb.from('filiais').delete().eq('empresa_id',empId);
-    const {data:fils}=await sb.from('filiais').insert(nomes.map(n=>({empresa_id:empId,nome:n}))).select();
-    filiaisIds=(fils||[]).map(f=>f.id);
+    // Buscar filiais existentes
+    const {data:exist}=await sb.from('filiais').select('id,nome').eq('empresa_id',empId);
+    const existentes=exist||[];
+    const nomesExistentes=existentes.map(f=>f.nome);
+    // Inserir só os novos (que não existem ainda)
+    const novos=nomes.filter(n=>!nomesExistentes.includes(n));
+    if(novos.length){
+      await sb.from('filiais').insert(novos.map(n=>({empresa_id:empId,nome:n})));
+    }
+    // Remover filiais que não estão mais na lista (apenas em modo edição)
+    if(id){
+      const remover=existentes.filter(f=>!nomes.includes(f.nome));
+      for(const f of remover){
+        await sb.from('filiais').delete().eq('id',f.id);
+      }
+    }
+    // Buscar IDs atuais
+    const {data:fAtual}=await sb.from('filiais').select('id').eq('empresa_id',empId);
+    filiaisIds=(fAtual||[]).map(f=>f.id);
   } else if(empId){
     const {data:fEx}=await sb.from('filiais').select('id').eq('empresa_id',empId).limit(1);
     if(fEx&&fEx.length)filiaisIds=[fEx[0].id];
@@ -1328,7 +1366,7 @@ async function imprimirRelatorio(origem){
   camC.forEach(c=>{const v=tots[c.label]||0;tRow+='<td style="font-weight:600;color:'+(v>0?'#0a7a4e':v<0?'#c0392b':'inherit')+'">'+(c.tipo==='moeda'?fT(v):'')+'</td>';});
   tRow+='<td style="font-weight:700;color:'+(tg>0?'#0a7a4e':tg<0?'#c0392b':'inherit')+'">'+fT(tg)+'</td><td></td></tr>';
   const th=camC.map(c=>'<th>'+c.label+'</th>').join('');
-  const html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>'+titulo+'</title><style>@page{size:A4 landscape;margin:12mm 10mm}*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{font-size:9px;color:#1a1a18}.cab{display:flex;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #3C3489}.logo{display:flex;align-items:center;gap:8px}.logo-ic{width:36px;height:36px;border-radius:50%;background:#EEEDFE;display:flex;align-items:center;justify-content:center;font-size:18px}.logo-nm{font-size:14px;font-weight:700;color:#3C3489}.logo-sb{font-size:9px;color:#534AB7}.inf{text-align:right;font-size:9px;color:#6b6b67}h2{font-size:12px;font-weight:600;color:#3C3489;margin-bottom:3px}table{width:100%;border-collapse:collapse;font-size:8px}th{background:#EEEDFE;color:#3C3489;padding:4px 5px;text-align:right;border:0.5px solid #AFA9EC;font-weight:600;font-size:7.5px;white-space:nowrap}th:first-child{text-align:left}td{padding:3px 5px;border:0.5px solid #e0e0e0;text-align:right;white-space:nowrap}td.dc{text-align:left;font-weight:500;background:#f9f9f7}.tr td{background:#EEEDFE;font-weight:700;border-top:1.5px solid #3C3489}.leg{display:flex;gap:16px;margin-top:8px;font-size:8px;color:#6b6b67}.li{display:flex;align-items:center;gap:4px}.lb{width:14px;height:10px;border-radius:2px;border:0.5px solid #ccc}.rod{margin-top:8px;padding-top:6px;border-top:1px solid #e0e0e0;font-size:8px;color:#9c9a92;display:flex;justify-content:space-between}</style></head><body><div class="cab"><div><div class="logo"><div class="logo-ic"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0Ij4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZmFjZSIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjAiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMEEyQTVFIj48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iMjAlIiBzdG9wLWNvbG9yPSIjMUM1N0M5Ij48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iNDIlIiBzdG9wLWNvbG9yPSIjNkZBMEVFIj48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iNTAlIiBzdG9wLWNvbG9yPSIjRThGMUZGIj48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iNTglIiBzdG9wLWNvbG9yPSIjNkZBMEVFIj48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iODAlIiBzdG9wLWNvbG9yPSIjMUM1N0M5Ij48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzBBMkE1RSI+PC9zdG9wPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ic2hhZGUiIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIwLjI1Ij48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iNjAlIiBzdG9wLWNvbG9yPSIjMDAwMDAwIiBzdG9wLW9wYWNpdHk9IjAiPjwvc3RvcD4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMDAwMDAwIiBzdG9wLW9wYWNpdHk9IjAuMzUiPjwvc3RvcD4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxwYXRoIGQ9Ik0zMiA0IEw1NiA4IEM1OCA4IDYwIDEwIDYwIDEyIEw2MCAzMCBDNjAgNDYgNDggNTYgMzIgNjIgQzE2IDU2IDQgNDYgNCAzMCBMNCAxMiBDNCAxMCA2IDggOCA4IFoiIGZpbGw9IiMwNDEyMkIiIG9wYWNpdHk9IjAuMyIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCAzKSI+PC9wYXRoPgogIDxwYXRoIGQ9Ik0zMiA0IEw1NiA4IEM1OCA4IDYwIDEwIDYwIDEyIEw2MCAzMCBDNjAgNDYgNDggNTYgMzIgNjIgQzE2IDU2IDQgNDYgNCAzMCBMNCAxMiBDNCAxMCA2IDggOCA4IFoiIGZpbGw9IiMwNDEyMkIiPjwvcGF0aD4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgzMiAzMykgc2NhbGUoMC45MikgdHJhbnNsYXRlKC0zMiAtMzMpIj4KICAgIDxwYXRoIGQ9Ik0zMiA0IEw1NiA4IEM1OCA4IDYwIDEwIDYwIDEyIEw2MCAzMCBDNjAgNDYgNDggNTYgMzIgNjIgQzE2IDU2IDQgNDYgNCAzMCBMNCAxMiBDNCAxMCA2IDggOCA4IFoiIGZpbGw9InVybCgjZmFjZSkiPjwvcGF0aD4KICAgIDxwYXRoIGQ9Ik0zMiA0IEw1NiA4IEM1OCA4IDYwIDEwIDYwIDEyIEw2MCAzMCBDNjAgNDYgNDggNTYgMzIgNjIgQzE2IDU2IDQgNDYgNCAzMCBMNCAxMiBDNCAxMCA2IDggOCA4IFoiIGZpbGw9InVybCgjc2hhZGUpIj48L3BhdGg+CiAgPC9nPgogIDxwYXRoIGQ9Ik0xOCA0NiBMMTggMjIgTDI2IDIyIEwzMiAzMiBMMzggMjIgTDQ2IDIyIEw0NiA0NiBMNDAgNDYgTDQwIDMwIEwzNCA0MCBMMzAgNDAgTDI0IDMwIEwyNCA0NiBaIiBmaWxsPSIjZmZmZmZmIj48L3BhdGg+Cjwvc3ZnPg==" width="36" height="36" style="border-radius:50%"></div><div><div class="logo-nm">MegaFllex Auditoria</div><div class="logo-sb">Sistema de Conciliação Financeira</div></div></div><div style="margin-top:8px"><h2>'+titulo+'</h2><div style="font-size:9px;color:#6b6b67"><strong>Empresa:</strong> '+empN+' &nbsp;|&nbsp; <strong>Filial:</strong> '+filN+' &nbsp;|&nbsp; <strong>Período:</strong> '+mesN+'</div></div></div><div class="inf"><div><strong>Emitido em:</strong> '+dI+' às '+hI+'</div><div style="margin-top:3px"><strong>Total lançamentos:</strong> '+rows.length+'</div><div style="margin-top:3px"><strong>Total diferença:</strong> <span style="color:'+(tg<0?'#c0392b':tg>0?'#0a7a4e':'inherit')+';font-weight:700">'+fT(tg)+'</span></div></div></div><table><thead><tr><th>Data</th>'+th+'<th>Total dif.</th><th>Status</th></tr></thead><tbody>'+linhas+tRow+'</tbody></table><div class="leg"><div class="li"><div class="lb" style="background:#FFF3CD;border-color:#E6A817"></div>Proprietário</div><div class="li"><div class="lb" style="background:#FFD6D6;border-color:#D85A30"></div>Operador</div><div class="li"><div class="lb" style="background:#EAF3DE;border-color:#3B6D11"></div>Ok</div><div class="li"><div class="lb" style="background:#FAECE7;border-color:#993C1D"></div>Diferença</div></div><div class="rod"><span>© 2026 · MegaFllex Soluções · v0.1.3</span><span>Documento gerado automaticamente</span></div></body></html>';
+  const html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>'+titulo+'</title><style>@page{size:A4 landscape;margin:12mm 10mm}*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{font-size:9px;color:#1a1a18}.cab{display:flex;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #3C3489}.logo{display:flex;align-items:center;gap:8px}.logo-ic{width:36px;height:36px;border-radius:50%;background:#EEEDFE;display:flex;align-items:center;justify-content:center;font-size:18px}.logo-nm{font-size:14px;font-weight:700;color:#3C3489}.logo-sb{font-size:9px;color:#534AB7}.inf{text-align:right;font-size:9px;color:#6b6b67}h2{font-size:12px;font-weight:600;color:#3C3489;margin-bottom:3px}table{width:100%;border-collapse:collapse;font-size:8px}th{background:#EEEDFE;color:#3C3489;padding:4px 5px;text-align:right;border:0.5px solid #AFA9EC;font-weight:600;font-size:7.5px;white-space:nowrap}th:first-child{text-align:left}td{padding:3px 5px;border:0.5px solid #e0e0e0;text-align:right;white-space:nowrap}td.dc{text-align:left;font-weight:500;background:#f9f9f7}.tr td{background:#EEEDFE;font-weight:700;border-top:1.5px solid #3C3489}.leg{display:flex;gap:16px;margin-top:8px;font-size:8px;color:#6b6b67}.li{display:flex;align-items:center;gap:4px}.lb{width:14px;height:10px;border-radius:2px;border:0.5px solid #ccc}.rod{margin-top:8px;padding-top:6px;border-top:1px solid #e0e0e0;font-size:8px;color:#9c9a92;display:flex;justify-content:space-between}</style></head><body><div class="cab"><div><div class="logo"><div class="logo-ic"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0Ij4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZmFjZSIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjAiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMEEyQTVFIj48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iMjAlIiBzdG9wLWNvbG9yPSIjMUM1N0M5Ij48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iNDIlIiBzdG9wLWNvbG9yPSIjNkZBMEVFIj48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iNTAlIiBzdG9wLWNvbG9yPSIjRThGMUZGIj48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iNTglIiBzdG9wLWNvbG9yPSIjNkZBMEVFIj48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iODAlIiBzdG9wLWNvbG9yPSIjMUM1N0M5Ij48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzBBMkE1RSI+PC9zdG9wPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ic2hhZGUiIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIwLjI1Ij48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iNjAlIiBzdG9wLWNvbG9yPSIjMDAwMDAwIiBzdG9wLW9wYWNpdHk9IjAiPjwvc3RvcD4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMDAwMDAwIiBzdG9wLW9wYWNpdHk9IjAuMzUiPjwvc3RvcD4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxwYXRoIGQ9Ik0zMiA0IEw1NiA4IEM1OCA4IDYwIDEwIDYwIDEyIEw2MCAzMCBDNjAgNDYgNDggNTYgMzIgNjIgQzE2IDU2IDQgNDYgNCAzMCBMNCAxMiBDNCAxMCA2IDggOCA4IFoiIGZpbGw9IiMwNDEyMkIiIG9wYWNpdHk9IjAuMyIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCAzKSI+PC9wYXRoPgogIDxwYXRoIGQ9Ik0zMiA0IEw1NiA4IEM1OCA4IDYwIDEwIDYwIDEyIEw2MCAzMCBDNjAgNDYgNDggNTYgMzIgNjIgQzE2IDU2IDQgNDYgNCAzMCBMNCAxMiBDNCAxMCA2IDggOCA4IFoiIGZpbGw9IiMwNDEyMkIiPjwvcGF0aD4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgzMiAzMykgc2NhbGUoMC45MikgdHJhbnNsYXRlKC0zMiAtMzMpIj4KICAgIDxwYXRoIGQ9Ik0zMiA0IEw1NiA4IEM1OCA4IDYwIDEwIDYwIDEyIEw2MCAzMCBDNjAgNDYgNDggNTYgMzIgNjIgQzE2IDU2IDQgNDYgNCAzMCBMNCAxMiBDNCAxMCA2IDggOCA4IFoiIGZpbGw9InVybCgjZmFjZSkiPjwvcGF0aD4KICAgIDxwYXRoIGQ9Ik0zMiA0IEw1NiA4IEM1OCA4IDYwIDEwIDYwIDEyIEw2MCAzMCBDNjAgNDYgNDggNTYgMzIgNjIgQzE2IDU2IDQgNDYgNCAzMCBMNCAxMiBDNCAxMCA2IDggOCA4IFoiIGZpbGw9InVybCgjc2hhZGUpIj48L3BhdGg+CiAgPC9nPgogIDxwYXRoIGQ9Ik0xOCA0NiBMMTggMjIgTDI2IDIyIEwzMiAzMiBMMzggMjIgTDQ2IDIyIEw0NiA0NiBMNDAgNDYgTDQwIDMwIEwzNCA0MCBMMzAgNDAgTDI0IDMwIEwyNCA0NiBaIiBmaWxsPSIjZmZmZmZmIj48L3BhdGg+Cjwvc3ZnPg==" width="36" height="36" style="border-radius:50%"></div><div><div class="logo-nm">MegaFllex Auditoria</div><div class="logo-sb">Sistema de Conciliação Financeira</div></div></div><div style="margin-top:8px"><h2>'+titulo+'</h2><div style="font-size:9px;color:#6b6b67"><strong>Empresa:</strong> '+empN+' &nbsp;|&nbsp; <strong>Filial:</strong> '+filN+' &nbsp;|&nbsp; <strong>Período:</strong> '+mesN+'</div></div></div><div class="inf"><div><strong>Emitido em:</strong> '+dI+' às '+hI+'</div><div style="margin-top:3px"><strong>Total lançamentos:</strong> '+rows.length+'</div><div style="margin-top:3px"><strong>Total diferença:</strong> <span style="color:'+(tg<0?'#c0392b':tg>0?'#0a7a4e':'inherit')+';font-weight:700">'+fT(tg)+'</span></div></div></div><table><thead><tr><th>Data</th>'+th+'<th>Total dif.</th><th>Status</th></tr></thead><tbody>'+linhas+tRow+'</tbody></table><div class="leg"><div class="li"><div class="lb" style="background:#FFF3CD;border-color:#E6A817"></div>Proprietário</div><div class="li"><div class="lb" style="background:#FFD6D6;border-color:#D85A30"></div>Operador</div><div class="li"><div class="lb" style="background:#EAF3DE;border-color:#3B6D11"></div>Ok</div><div class="li"><div class="lb" style="background:#FAECE7;border-color:#993C1D"></div>Diferença</div></div><div class="rod"><span>© 2026 · MegaFllex Soluções · v0.1.4</span><span>Documento gerado automaticamente</span></div></body></html>';
   const w=window.open('','_blank','width=1200,height=800');w.document.write(html);w.document.close();w.onload=()=>w.print();
 }
 
@@ -1373,6 +1411,8 @@ window.abrirModalCampo = abrirModalCampo;
 window.salvarCampo = salvarCampo;
 window.adicionarCampo = adicionarCampo;
 window.confirmarDelCampo = confirmarDelCampo;
+window.confirmarDelEmp = confirmarDelEmp;
+window.delEmp = delEmp;
 window.delCampo = delCampo;
 window.fecharModal = fecharModal;
 window.fFundo = fFundo;
