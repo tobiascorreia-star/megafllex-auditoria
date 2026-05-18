@@ -102,7 +102,7 @@ tr:hover td:first-child{background:var(--bg2)}
 .leg-box{width:20px;height:13px;border-radius:2px;border-bottom:2px solid;flex-shrink:0}
 .audit-card{border:0.5px solid var(--brd);border-radius:var(--rl);padding:10px 12px;margin-bottom:8px}
 .col-change{display:flex;align-items:center;gap:6px;padding:5px 9px;border-radius:var(--r);background:var(--bg2);font-size:11px;margin-bottom:4px;flex-wrap:wrap}
-.grupo-titulo{font-size:10px;font-weight:500;color:var(--txt2);background:var(--bg2);padding:4px 9px;border-radius:var(--r);margin:10px 0 5px}
+.grupo-titulo{font-size:11px;font-weight:700;color:var(--mega-txt);background:var(--mega);padding:5px 12px;border-radius:var(--r);margin:12px 0 6px;border-left:3px solid var(--mega-sub);letter-spacing:0.04em;text-transform:uppercase}
 .campo-tag{display:inline-flex;align-items:center;gap:4px;background:var(--bg2);border:0.5px solid var(--brd);border-radius:var(--r);padding:3px 8px;font-size:11px;margin:2px}
 .campo-tag button{border:none;background:none;cursor:pointer;color:var(--txt3);font-size:13px;line-height:1;padding:0}
 .rodape{text-align:center;padding:10px 0 4px;font-size:10px;color:var(--txt3);border-top:0.5px solid var(--brd);margin-top:6px}
@@ -129,7 +129,31 @@ tr:hover td:first-child{background:var(--bg2)}
   <div class="login-wrap">
     <div class="login-card">
       <div style="text-align:center;margin-bottom:1.5rem">
-        <div style="width:52px;height:52px;border-radius:50%;background:var(--mega);display:flex;align-items:center;justify-content:center;margin:0 auto 10px"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L3 6v6c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V6L12 2z" fill="#1a56db"/><path d="M9 12l2 2 4-4" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>
+        <div style="margin:0 auto 10px;width:56px;height:56px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="56" height="56">
+  <defs>
+    <linearGradient id="face_login" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0A2A5E"></stop>
+      <stop offset="20%" stop-color="#1C57C9"></stop>
+      <stop offset="42%" stop-color="#6FA0EE"></stop>
+      <stop offset="50%" stop-color="#E8F1FF"></stop>
+      <stop offset="58%" stop-color="#6FA0EE"></stop>
+      <stop offset="80%" stop-color="#1C57C9"></stop>
+      <stop offset="100%" stop-color="#0A2A5E"></stop>
+    </linearGradient>
+    <linearGradient id="shade_login" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.25"></stop>
+      <stop offset="60%" stop-color="#000000" stop-opacity="0"></stop>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.35"></stop>
+    </linearGradient>
+  </defs>
+  <path d="M32 4 L56 8 C58 8 60 10 60 12 L60 30 C60 46 48 56 32 62 C16 56 4 46 4 30 L4 12 C4 10 6 8 8 8 Z" fill="#04122B" opacity="0.3" transform="translate(0 3)"></path>
+  <path d="M32 4 L56 8 C58 8 60 10 60 12 L60 30 C60 46 48 56 32 62 C16 56 4 46 4 30 L4 12 C4 10 6 8 8 8 Z" fill="#04122B"></path>
+  <g transform="translate(32 33) scale(0.92) translate(-32 -33)">
+    <path d="M32 4 L56 8 C58 8 60 10 60 12 L60 30 C60 46 48 56 32 62 C16 56 4 46 4 30 L4 12 C4 10 6 8 8 8 Z" fill="url(#face_login)"></path>
+    <path d="M32 4 L56 8 C58 8 60 10 60 12 L60 30 C60 46 48 56 32 62 C16 56 4 46 4 30 L4 12 C4 10 6 8 8 8 Z" fill="url(#shade_login)"></path>
+  </g>
+  <path d="M18 46 L18 22 L26 22 L32 32 L38 22 L46 22 L46 46 L40 46 L40 30 L34 40 L30 40 L24 30 L24 46 Z" fill="#ffffff"></path>
+</svg></div>
         <div style="font-size:18px;font-weight:500">MegaFllex Auditoria</div>
         <div style="font-size:12px;color:var(--txt2);margin-top:4px">Sistema de conciliação financeira</div>
         <div style="display:flex;justify-content:center;gap:4px;margin-top:10px">
@@ -156,7 +180,31 @@ tr:hover td:first-child{background:var(--bg2)}
   <div class="app"><div class="card">
     <div class="topbar" style="background:var(--mega);border-radius:var(--rl) var(--rl) 0 0">
       <button onclick="confirmarSaida()" class="btn-sair" style="border-color:var(--mega-brd);color:var(--mega-txt)">⬅ Sair</button>
-      <div class="avatar av-mega"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L3 6v6c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V6L12 2z" fill="#1a56db"/><path d="M9 12l2 2 4-4" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div>
+      <div class="avatar av-mega"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="20" height="20">
+  <defs>
+    <linearGradient id="face_icon0" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0A2A5E"></stop>
+      <stop offset="20%" stop-color="#1C57C9"></stop>
+      <stop offset="42%" stop-color="#6FA0EE"></stop>
+      <stop offset="50%" stop-color="#E8F1FF"></stop>
+      <stop offset="58%" stop-color="#6FA0EE"></stop>
+      <stop offset="80%" stop-color="#1C57C9"></stop>
+      <stop offset="100%" stop-color="#0A2A5E"></stop>
+    </linearGradient>
+    <linearGradient id="shade_icon0" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.25"></stop>
+      <stop offset="60%" stop-color="#000000" stop-opacity="0"></stop>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.35"></stop>
+    </linearGradient>
+  </defs>
+  <path d="M32 4 L56 8 C58 8 60 10 60 12 L60 30 C60 46 48 56 32 62 C16 56 4 46 4 30 L4 12 C4 10 6 8 8 8 Z" fill="#04122B" opacity="0.3" transform="translate(0 3)"></path>
+  <path d="M32 4 L56 8 C58 8 60 10 60 12 L60 30 C60 46 48 56 32 62 C16 56 4 46 4 30 L4 12 C4 10 6 8 8 8 Z" fill="#04122B"></path>
+  <g transform="translate(32 33) scale(0.92) translate(-32 -33)">
+    <path d="M32 4 L56 8 C58 8 60 10 60 12 L60 30 C60 46 48 56 32 62 C16 56 4 46 4 30 L4 12 C4 10 6 8 8 8 Z" fill="url(#face_icon0)"></path>
+    <path d="M32 4 L56 8 C58 8 60 10 60 12 L60 30 C60 46 48 56 32 62 C16 56 4 46 4 30 L4 12 C4 10 6 8 8 8 Z" fill="url(#shade_icon0)"></path>
+  </g>
+  <path d="M18 46 L18 22 L26 22 L32 32 L38 22 L46 22 L46 46 L40 46 L40 30 L34 40 L30 40 L24 30 L24 46 Z" fill="#ffffff"></path>
+</svg></div>
       <div class="topbar-info">
         <div style="font-size:13px;font-weight:500;color:var(--mega-txt)">MegaFllex Auditoria</div>
         <div style="font-size:10px;color:var(--mega-sub)" id="mega-user-nome">Administrador master</div>
@@ -168,7 +216,31 @@ tr:hover td:first-child{background:var(--bg2)}
         <button class="tab active" onclick="mTab('dashboard',this)">📊 Dashboard</button>
         <button class="tab" onclick="mTab('empresas',this)">🏢 Empresas</button>
         <button class="tab" onclick="mTab('lancamentos',this)">📋 Lançamentos</button>
-        <button class="tab" onclick="mTab('auditoria',this)"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L3 6v6c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V6L12 2z" fill="#1a56db"/><path d="M9 12l2 2 4-4" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg> Auditoria</button>
+        <button class="tab" onclick="mTab('auditoria',this)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="20" height="20">
+  <defs>
+    <linearGradient id="face_icon1" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0A2A5E"></stop>
+      <stop offset="20%" stop-color="#1C57C9"></stop>
+      <stop offset="42%" stop-color="#6FA0EE"></stop>
+      <stop offset="50%" stop-color="#E8F1FF"></stop>
+      <stop offset="58%" stop-color="#6FA0EE"></stop>
+      <stop offset="80%" stop-color="#1C57C9"></stop>
+      <stop offset="100%" stop-color="#0A2A5E"></stop>
+    </linearGradient>
+    <linearGradient id="shade_icon1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.25"></stop>
+      <stop offset="60%" stop-color="#000000" stop-opacity="0"></stop>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.35"></stop>
+    </linearGradient>
+  </defs>
+  <path d="M32 4 L56 8 C58 8 60 10 60 12 L60 30 C60 46 48 56 32 62 C16 56 4 46 4 30 L4 12 C4 10 6 8 8 8 Z" fill="#04122B" opacity="0.3" transform="translate(0 3)"></path>
+  <path d="M32 4 L56 8 C58 8 60 10 60 12 L60 30 C60 46 48 56 32 62 C16 56 4 46 4 30 L4 12 C4 10 6 8 8 8 Z" fill="#04122B"></path>
+  <g transform="translate(32 33) scale(0.92) translate(-32 -33)">
+    <path d="M32 4 L56 8 C58 8 60 10 60 12 L60 30 C60 46 48 56 32 62 C16 56 4 46 4 30 L4 12 C4 10 6 8 8 8 Z" fill="url(#face_icon1)"></path>
+    <path d="M32 4 L56 8 C58 8 60 10 60 12 L60 30 C60 46 48 56 32 62 C16 56 4 46 4 30 L4 12 C4 10 6 8 8 8 Z" fill="url(#shade_icon1)"></path>
+  </g>
+  <path d="M18 46 L18 22 L26 22 L32 32 L38 22 L46 22 L46 46 L40 46 L40 30 L34 40 L30 40 L24 30 L24 46 Z" fill="#ffffff"></path>
+</svg> Auditoria</button>
         <button class="tab" onclick="mTab('campos',this)">⚙️ Campos</button>
         <button class="tab" onclick="mTab('equipe',this)">👥 Equipe</button>
       </div>
@@ -255,7 +327,31 @@ tr:hover td:first-child{background:var(--bg2)}
     <div class="inner">
       <div class="tab-bar">
         <button class="tab active" onclick="eTab('lancamentos',this)">📋 Lançamentos</button>
-        <button class="tab" onclick="eTab('auditoria',this)"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L3 6v6c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V6L12 2z" fill="#1a56db"/><path d="M9 12l2 2 4-4" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg> Minhas edições</button>
+        <button class="tab" onclick="eTab('auditoria',this)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="20" height="20">
+  <defs>
+    <linearGradient id="face_icon2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0A2A5E"></stop>
+      <stop offset="20%" stop-color="#1C57C9"></stop>
+      <stop offset="42%" stop-color="#6FA0EE"></stop>
+      <stop offset="50%" stop-color="#E8F1FF"></stop>
+      <stop offset="58%" stop-color="#6FA0EE"></stop>
+      <stop offset="80%" stop-color="#1C57C9"></stop>
+      <stop offset="100%" stop-color="#0A2A5E"></stop>
+    </linearGradient>
+    <linearGradient id="shade_icon2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.25"></stop>
+      <stop offset="60%" stop-color="#000000" stop-opacity="0"></stop>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.35"></stop>
+    </linearGradient>
+  </defs>
+  <path d="M32 4 L56 8 C58 8 60 10 60 12 L60 30 C60 46 48 56 32 62 C16 56 4 46 4 30 L4 12 C4 10 6 8 8 8 Z" fill="#04122B" opacity="0.3" transform="translate(0 3)"></path>
+  <path d="M32 4 L56 8 C58 8 60 10 60 12 L60 30 C60 46 48 56 32 62 C16 56 4 46 4 30 L4 12 C4 10 6 8 8 8 Z" fill="#04122B"></path>
+  <g transform="translate(32 33) scale(0.92) translate(-32 -33)">
+    <path d="M32 4 L56 8 C58 8 60 10 60 12 L60 30 C60 46 48 56 32 62 C16 56 4 46 4 30 L4 12 C4 10 6 8 8 8 Z" fill="url(#face_icon2)"></path>
+    <path d="M32 4 L56 8 C58 8 60 10 60 12 L60 30 C60 46 48 56 32 62 C16 56 4 46 4 30 L4 12 C4 10 6 8 8 8 Z" fill="url(#shade_icon2)"></path>
+  </g>
+  <path d="M18 46 L18 22 L26 22 L32 32 L38 22 L46 22 L46 46 L40 46 L40 30 L34 40 L30 40 L24 30 L24 46 Z" fill="#ffffff"></path>
+</svg> Minhas edições</button>
       </div>
       <div id="e-lancamentos">
         <div class="notice n-warn">Suas edições ficam em <strong>laranja</strong> e registradas na <strong>MegaFllex Auditoria</strong>.</div>
@@ -343,7 +439,31 @@ tr:hover td:first-child{background:var(--bg2)}
     <div class="inner">
       <div class="tab-bar">
         <button class="tab active" onclick="omTab('lancamentos',this)">📋 Lançamentos</button>
-        <button class="tab" onclick="omTab('auditoria',this)"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L3 6v6c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V6L12 2z" fill="#1a56db"/><path d="M9 12l2 2 4-4" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg> Auditoria</button>
+        <button class="tab" onclick="omTab('auditoria',this)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="20" height="20">
+  <defs>
+    <linearGradient id="face_icon3" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0A2A5E"></stop>
+      <stop offset="20%" stop-color="#1C57C9"></stop>
+      <stop offset="42%" stop-color="#6FA0EE"></stop>
+      <stop offset="50%" stop-color="#E8F1FF"></stop>
+      <stop offset="58%" stop-color="#6FA0EE"></stop>
+      <stop offset="80%" stop-color="#1C57C9"></stop>
+      <stop offset="100%" stop-color="#0A2A5E"></stop>
+    </linearGradient>
+    <linearGradient id="shade_icon3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.25"></stop>
+      <stop offset="60%" stop-color="#000000" stop-opacity="0"></stop>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.35"></stop>
+    </linearGradient>
+  </defs>
+  <path d="M32 4 L56 8 C58 8 60 10 60 12 L60 30 C60 46 48 56 32 62 C16 56 4 46 4 30 L4 12 C4 10 6 8 8 8 Z" fill="#04122B" opacity="0.3" transform="translate(0 3)"></path>
+  <path d="M32 4 L56 8 C58 8 60 10 60 12 L60 30 C60 46 48 56 32 62 C16 56 4 46 4 30 L4 12 C4 10 6 8 8 8 Z" fill="#04122B"></path>
+  <g transform="translate(32 33) scale(0.92) translate(-32 -33)">
+    <path d="M32 4 L56 8 C58 8 60 10 60 12 L60 30 C60 46 48 56 32 62 C16 56 4 46 4 30 L4 12 C4 10 6 8 8 8 Z" fill="url(#face_icon3)"></path>
+    <path d="M32 4 L56 8 C58 8 60 10 60 12 L60 30 C60 46 48 56 32 62 C16 56 4 46 4 30 L4 12 C4 10 6 8 8 8 Z" fill="url(#shade_icon3)"></path>
+  </g>
+  <path d="M18 46 L18 22 L26 22 L32 32 L38 22 L46 22 L46 46 L40 46 L40 30 L34 40 L30 40 L24 30 L24 46 Z" fill="#ffffff"></path>
+</svg> Auditoria</button>
       </div>
       <div id="om-lancamentos">
         <div class="notice" style="background:#E6F1FB;color:#185FA5">Selecione a empresa e filial para lançar ou visualizar.</div>
@@ -766,7 +886,31 @@ function abrirModalEmpresa(id){
   const emp=id?empC.find(e=>e.id===id):null;
   const filStr=emp?(emp.filiais||[]).map(f=>f.nome).join('\n'):'';
   const bUsr=`<div style="margin-top:10px;padding:10px 12px;background:var(--mega);border-radius:var(--r);border:0.5px solid var(--mega-brd)">
-    <div style="font-size:11px;font-weight:500;color:var(--mega-txt);margin-bottom:8px"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L3 6v6c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V6L12 2z" fill="#1a56db"/><path d="M9 12l2 2 4-4" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg> ${id?'Adicionar usuário':'Cadastrar usuários'} — ${id?'deixe em branco se não quiser adicionar':'criados automaticamente no Supabase'}</div>
+    <div style="font-size:11px;font-weight:500;color:var(--mega-txt);margin-bottom:8px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="20" height="20">
+  <defs>
+    <linearGradient id="face_icon4" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0A2A5E"></stop>
+      <stop offset="20%" stop-color="#1C57C9"></stop>
+      <stop offset="42%" stop-color="#6FA0EE"></stop>
+      <stop offset="50%" stop-color="#E8F1FF"></stop>
+      <stop offset="58%" stop-color="#6FA0EE"></stop>
+      <stop offset="80%" stop-color="#1C57C9"></stop>
+      <stop offset="100%" stop-color="#0A2A5E"></stop>
+    </linearGradient>
+    <linearGradient id="shade_icon4" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.25"></stop>
+      <stop offset="60%" stop-color="#000000" stop-opacity="0"></stop>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.35"></stop>
+    </linearGradient>
+  </defs>
+  <path d="M32 4 L56 8 C58 8 60 10 60 12 L60 30 C60 46 48 56 32 62 C16 56 4 46 4 30 L4 12 C4 10 6 8 8 8 Z" fill="#04122B" opacity="0.3" transform="translate(0 3)"></path>
+  <path d="M32 4 L56 8 C58 8 60 10 60 12 L60 30 C60 46 48 56 32 62 C16 56 4 46 4 30 L4 12 C4 10 6 8 8 8 Z" fill="#04122B"></path>
+  <g transform="translate(32 33) scale(0.92) translate(-32 -33)">
+    <path d="M32 4 L56 8 C58 8 60 10 60 12 L60 30 C60 46 48 56 32 62 C16 56 4 46 4 30 L4 12 C4 10 6 8 8 8 Z" fill="url(#face_icon4)"></path>
+    <path d="M32 4 L56 8 C58 8 60 10 60 12 L60 30 C60 46 48 56 32 62 C16 56 4 46 4 30 L4 12 C4 10 6 8 8 8 Z" fill="url(#shade_icon4)"></path>
+  </g>
+  <path d="M18 46 L18 22 L26 22 L32 32 L38 22 L46 22 L46 46 L40 46 L40 30 L34 40 L30 40 L24 30 L24 46 Z" fill="#ffffff"></path>
+</svg> ${id?'Adicionar usuário':'Cadastrar usuários'} — ${id?'deixe em branco se não quiser adicionar':'criados automaticamente no Supabase'}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
       <div>
         <div style="font-size:10px;font-weight:500;color:var(--mega-sub);margin-bottom:4px">Proprietário</div>
@@ -936,7 +1080,7 @@ async function abrirEdit(id,quem){
   const bb=document.getElementById('edit-back-btn');bb.style.borderColor=isE?'var(--prop-brd)':'var(--oper-brd)';bb.style.color=isE?'var(--prop-txt)':'var(--oper-txt)';
   document.getElementById('edit-badge').innerHTML='<span class="badge '+(isE?'b-prop':'b-oper')+'">'+l.data_lanc?.slice(8,10)+'/'+l.data_lanc?.slice(5,7)+'</span>';
   const n=document.getElementById('edit-notice');n.className='notice '+(isE?'n-warn':'n-oper');
-  n.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L3 6v6c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V6L12 2z" fill="#1a56db"/><path d="M9 12l2 2 4-4" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg> <strong>'+(isE?'Proprietário':'Operador')+'</strong> · cada coluna alterada é registrada na <strong>MegaFllex Auditoria</strong>.';
+  n.innerHTML='🛡️'+(isE?'Proprietário':'Operador')+'</strong> · cada coluna alterada é registrada na <strong>MegaFllex Auditoria</strong>.';
   document.getElementById('edit-back-btn').onclick=voltarEdit;
   document.getElementById('edit-cancel-btn').onclick=voltarEdit;
   const g={};camC.forEach(c=>{if(!g[c.grupo])g[c.grupo]=[];g[c.grupo].push(c);});
@@ -1035,7 +1179,7 @@ async function imprimirRelatorio(origem){
   camC.forEach(c=>{const v=tots[c.label]||0;tRow+='<td style="font-weight:600;color:'+(v>0?'#0a7a4e':v<0?'#c0392b':'inherit')+'">'+(c.tipo==='moeda'?fT(v):'')+'</td>';});
   tRow+='<td style="font-weight:700;color:'+(tg>0?'#0a7a4e':tg<0?'#c0392b':'inherit')+'">'+fT(tg)+'</td><td></td></tr>';
   const th=camC.map(c=>'<th>'+c.label+'</th>').join('');
-  const html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>'+titulo+'</title><style>@page{size:A4 landscape;margin:12mm 10mm}*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{font-size:9px;color:#1a1a18}.cab{display:flex;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #3C3489}.logo{display:flex;align-items:center;gap:8px}.logo-ic{width:36px;height:36px;border-radius:50%;background:#EEEDFE;display:flex;align-items:center;justify-content:center;font-size:18px}.logo-nm{font-size:14px;font-weight:700;color:#3C3489}.logo-sb{font-size:9px;color:#534AB7}.inf{text-align:right;font-size:9px;color:#6b6b67}h2{font-size:12px;font-weight:600;color:#3C3489;margin-bottom:3px}table{width:100%;border-collapse:collapse;font-size:8px}th{background:#EEEDFE;color:#3C3489;padding:4px 5px;text-align:right;border:0.5px solid #AFA9EC;font-weight:600;font-size:7.5px;white-space:nowrap}th:first-child{text-align:left}td{padding:3px 5px;border:0.5px solid #e0e0e0;text-align:right;white-space:nowrap}td.dc{text-align:left;font-weight:500;background:#f9f9f7}.tr td{background:#EEEDFE;font-weight:700;border-top:1.5px solid #3C3489}.leg{display:flex;gap:16px;margin-top:8px;font-size:8px;color:#6b6b67}.li{display:flex;align-items:center;gap:4px}.lb{width:14px;height:10px;border-radius:2px;border:0.5px solid #ccc}.rod{margin-top:8px;padding-top:6px;border-top:1px solid #e0e0e0;font-size:8px;color:#9c9a92;display:flex;justify-content:space-between}</style></head><body><div class="cab"><div><div class="logo"><div class="logo-ic"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L3 6v6c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V6L12 2z" fill="#1a56db"/><path d="M9 12l2 2 4-4" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></div><div><div class="logo-nm">MegaFllex Auditoria</div><div class="logo-sb">Sistema de Conciliação Financeira</div></div></div><div style="margin-top:8px"><h2>'+titulo+'</h2><div style="font-size:9px;color:#6b6b67"><strong>Empresa:</strong> '+empN+' &nbsp;|&nbsp; <strong>Filial:</strong> '+filN+' &nbsp;|&nbsp; <strong>Período:</strong> '+mesN+'</div></div></div><div class="inf"><div><strong>Emitido em:</strong> '+dI+' às '+hI+'</div><div style="margin-top:3px"><strong>Total lançamentos:</strong> '+rows.length+'</div><div style="margin-top:3px"><strong>Total diferença:</strong> <span style="color:'+(tg<0?'#c0392b':tg>0?'#0a7a4e':'inherit')+';font-weight:700">'+fT(tg)+'</span></div></div></div><table><thead><tr><th>Data</th>'+th+'<th>Total dif.</th><th>Status</th></tr></thead><tbody>'+linhas+tRow+'</tbody></table><div class="leg"><div class="li"><div class="lb" style="background:#FFF3CD;border-color:#E6A817"></div>Proprietário</div><div class="li"><div class="lb" style="background:#FFD6D6;border-color:#D85A30"></div>Operador</div><div class="li"><div class="lb" style="background:#EAF3DE;border-color:#3B6D11"></div>Ok</div><div class="li"><div class="lb" style="background:#FAECE7;border-color:#993C1D"></div>Diferença</div></div><div class="rod"><span>© 2026 · MegaFllex Soluções · v0.1.2</span><span>Documento gerado automaticamente</span></div></body></html>';
+  const html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>'+titulo+'</title><style>@page{size:A4 landscape;margin:12mm 10mm}*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{font-size:9px;color:#1a1a18}.cab{display:flex;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #3C3489}.logo{display:flex;align-items:center;gap:8px}.logo-ic{width:36px;height:36px;border-radius:50%;background:#EEEDFE;display:flex;align-items:center;justify-content:center;font-size:18px}.logo-nm{font-size:14px;font-weight:700;color:#3C3489}.logo-sb{font-size:9px;color:#534AB7}.inf{text-align:right;font-size:9px;color:#6b6b67}h2{font-size:12px;font-weight:600;color:#3C3489;margin-bottom:3px}table{width:100%;border-collapse:collapse;font-size:8px}th{background:#EEEDFE;color:#3C3489;padding:4px 5px;text-align:right;border:0.5px solid #AFA9EC;font-weight:600;font-size:7.5px;white-space:nowrap}th:first-child{text-align:left}td{padding:3px 5px;border:0.5px solid #e0e0e0;text-align:right;white-space:nowrap}td.dc{text-align:left;font-weight:500;background:#f9f9f7}.tr td{background:#EEEDFE;font-weight:700;border-top:1.5px solid #3C3489}.leg{display:flex;gap:16px;margin-top:8px;font-size:8px;color:#6b6b67}.li{display:flex;align-items:center;gap:4px}.lb{width:14px;height:10px;border-radius:2px;border:0.5px solid #ccc}.rod{margin-top:8px;padding-top:6px;border-top:1px solid #e0e0e0;font-size:8px;color:#9c9a92;display:flex;justify-content:space-between}</style></head><body><div class="cab"><div><div class="logo"><div class="logo-ic"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0Ij4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZmFjZSIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjAiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMEEyQTVFIj48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iMjAlIiBzdG9wLWNvbG9yPSIjMUM1N0M5Ij48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iNDIlIiBzdG9wLWNvbG9yPSIjNkZBMEVFIj48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iNTAlIiBzdG9wLWNvbG9yPSIjRThGMUZGIj48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iNTglIiBzdG9wLWNvbG9yPSIjNkZBMEVFIj48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iODAlIiBzdG9wLWNvbG9yPSIjMUM1N0M5Ij48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzBBMkE1RSI+PC9zdG9wPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ic2hhZGUiIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIwLjI1Ij48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iNjAlIiBzdG9wLWNvbG9yPSIjMDAwMDAwIiBzdG9wLW9wYWNpdHk9IjAiPjwvc3RvcD4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMDAwMDAwIiBzdG9wLW9wYWNpdHk9IjAuMzUiPjwvc3RvcD4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxwYXRoIGQ9Ik0zMiA0IEw1NiA4IEM1OCA4IDYwIDEwIDYwIDEyIEw2MCAzMCBDNjAgNDYgNDggNTYgMzIgNjIgQzE2IDU2IDQgNDYgNCAzMCBMNCAxMiBDNCAxMCA2IDggOCA4IFoiIGZpbGw9IiMwNDEyMkIiIG9wYWNpdHk9IjAuMyIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCAzKSI+PC9wYXRoPgogIDxwYXRoIGQ9Ik0zMiA0IEw1NiA4IEM1OCA4IDYwIDEwIDYwIDEyIEw2MCAzMCBDNjAgNDYgNDggNTYgMzIgNjIgQzE2IDU2IDQgNDYgNCAzMCBMNCAxMiBDNCAxMCA2IDggOCA4IFoiIGZpbGw9IiMwNDEyMkIiPjwvcGF0aD4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgzMiAzMykgc2NhbGUoMC45MikgdHJhbnNsYXRlKC0zMiAtMzMpIj4KICAgIDxwYXRoIGQ9Ik0zMiA0IEw1NiA4IEM1OCA4IDYwIDEwIDYwIDEyIEw2MCAzMCBDNjAgNDYgNDggNTYgMzIgNjIgQzE2IDU2IDQgNDYgNCAzMCBMNCAxMiBDNCAxMCA2IDggOCA4IFoiIGZpbGw9InVybCgjZmFjZSkiPjwvcGF0aD4KICAgIDxwYXRoIGQ9Ik0zMiA0IEw1NiA4IEM1OCA4IDYwIDEwIDYwIDEyIEw2MCAzMCBDNjAgNDYgNDggNTYgMzIgNjIgQzE2IDU2IDQgNDYgNCAzMCBMNCAxMiBDNCAxMCA2IDggOCA4IFoiIGZpbGw9InVybCgjc2hhZGUpIj48L3BhdGg+CiAgPC9nPgogIDxwYXRoIGQ9Ik0xOCA0NiBMMTggMjIgTDI2IDIyIEwzMiAzMiBMMzggMjIgTDQ2IDIyIEw0NiA0NiBMNDAgNDYgTDQwIDMwIEwzNCA0MCBMMzAgNDAgTDI0IDMwIEwyNCA0NiBaIiBmaWxsPSIjZmZmZmZmIj48L3BhdGg+Cjwvc3ZnPg==" width="36" height="36" style="border-radius:50%"></div><div><div class="logo-nm">MegaFllex Auditoria</div><div class="logo-sb">Sistema de Conciliação Financeira</div></div></div><div style="margin-top:8px"><h2>'+titulo+'</h2><div style="font-size:9px;color:#6b6b67"><strong>Empresa:</strong> '+empN+' &nbsp;|&nbsp; <strong>Filial:</strong> '+filN+' &nbsp;|&nbsp; <strong>Período:</strong> '+mesN+'</div></div></div><div class="inf"><div><strong>Emitido em:</strong> '+dI+' às '+hI+'</div><div style="margin-top:3px"><strong>Total lançamentos:</strong> '+rows.length+'</div><div style="margin-top:3px"><strong>Total diferença:</strong> <span style="color:'+(tg<0?'#c0392b':tg>0?'#0a7a4e':'inherit')+';font-weight:700">'+fT(tg)+'</span></div></div></div><table><thead><tr><th>Data</th>'+th+'<th>Total dif.</th><th>Status</th></tr></thead><tbody>'+linhas+tRow+'</tbody></table><div class="leg"><div class="li"><div class="lb" style="background:#FFF3CD;border-color:#E6A817"></div>Proprietário</div><div class="li"><div class="lb" style="background:#FFD6D6;border-color:#D85A30"></div>Operador</div><div class="li"><div class="lb" style="background:#EAF3DE;border-color:#3B6D11"></div>Ok</div><div class="li"><div class="lb" style="background:#FAECE7;border-color:#993C1D"></div>Diferença</div></div><div class="rod"><span>© 2026 · MegaFllex Soluções · v0.1.2</span><span>Documento gerado automaticamente</span></div></body></html>';
   const w=window.open('','_blank','width=1200,height=800');w.document.write(html);w.document.close();w.onload=()=>w.print();
 }
 
