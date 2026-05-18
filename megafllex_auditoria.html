@@ -675,7 +675,59 @@ function eTab(t,btn){
 
 // FILIAL
 async function iniciarFilial(){
-  const {data:fil}=await sb.from('filiais').select('*, empresas(nome)').eq('id',pAt.filial_id).single();
+  // Se operador não tem filial/empresa definida, mostrar seletor
+  if(!pAt.filial_id || !pAt.empresa_id){
+    await mostrarSeletorFilial();
+    return;
+  }
+  await carregarFilial(pAt.filial_id);
+}
+
+async function mostrarSeletorFilial(){
+  // Buscar todas as empresas e filiais disponíveis
+  const {data:emps}=await sb.from('empresas').select('*, filiais(*)').eq('ativa',true);
+  const empresasDisp=emps||[];
+  show('s-filial');
+  document.getElementById('fil-nome-top').textContent='Operador';
+  document.getElementById('fil-emp-top').textContent='Selecione empresa e filial';
+  document.getElementById('f-notice-filial').innerHTML='Selecione a <strong>empresa</strong> e <strong>filial</strong> para lançar os movimentos.';
+
+  // Montar seletor no formulário
+  const grupos_html=`<div class="grid2" style="margin-bottom:12px">
+    <div class="irow"><label>Empresa</label>
+      <select id="sel-emp-op" onchange="atualizarFiliaisOp(${JSON.stringify(empresasDisp).replace(/"/g,'&quot;')})">
+        <option value="">Selecione...</option>
+        ${empresasDisp.map(e=>'<option value="'+e.id+'">'+e.nome+'</option>').join('')}
+      </select>
+    </div>
+    <div class="irow"><label>Filial</label>
+      <select id="sel-fil-op"><option value="">Selecione a empresa primeiro</option></select>
+    </div>
+  </div>
+  <button class="btn" style="width:100%;padding:11px;margin-bottom:12px" onclick="confirmarFilialOp()">✅ Confirmar e lançar</button>`;
+  document.getElementById('f-form-campos').innerHTML=grupos_html;
+  document.getElementById('f-fb').style.display='none';
+}
+
+function atualizarFiliaisOp(empresas){
+  const eId=document.getElementById('sel-emp-op').value;
+  const emp=empresas.find(e=>e.id===eId);
+  const sf=document.getElementById('sel-fil-op');
+  sf.innerHTML=emp?(emp.filiais||[]).map(f=>'<option value="'+f.id+'">'+f.nome+'</option>').join(''):'<option value="">Selecione a empresa primeiro</option>';
+}
+
+async function confirmarFilialOp(){
+  const eId=document.getElementById('sel-emp-op')?.value;
+  const fId=document.getElementById('sel-fil-op')?.value;
+  if(!eId||!fId){alert('Selecione empresa e filial');return;}
+  // Atualizar perfil temporariamente (apenas em memória)
+  pAt.empresa_id=eId;
+  pAt.filial_id=fId;
+  await carregarFilial(fId);
+}
+
+async function carregarFilial(filialId){
+  const {data:fil}=await sb.from('filiais').select('*, empresas(nome)').eq('id',filialId).single();
   document.getElementById('fil-nome-top').textContent='Operador · '+(fil?.nome||'Filial');
   document.getElementById('fil-emp-top').textContent=(fil?.empresas?.nome||'Empresa')+' · edições em vermelho';
   document.getElementById('f-notice-filial').innerHTML='Lançamentos identificados pela <strong>MegaFllex Auditoria</strong>. Filial: <strong>'+(fil?.nome||'')+'</strong>';
@@ -683,7 +735,8 @@ async function iniciarFilial(){
   sm.innerHTML=MESES.map(m=>'<option value="'+m+'">'+m+'</option>').join('');
   sm.value=mesAtual();
   document.getElementById('f-data').value=hoje();
-  renderFormFilial();show('s-filial');
+  renderFormFilial();
+  show('s-filial');
 }
 function renderFormFilial(){
   const g={};camC.forEach(c=>{if(!g[c.grupo])g[c.grupo]=[];g[c.grupo].push(c);});
