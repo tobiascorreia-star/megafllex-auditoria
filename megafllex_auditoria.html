@@ -842,6 +842,122 @@ async function renderDash(){
 function renderEmps(){
   document.getElementById('lista-empresas').innerHTML=empC.length?empC.map(e=>'<div class="emp-card" style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px"><div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0"><div class="avatar av-emp" style="width:38px;height:38px;font-size:13px;flex-shrink:0;margin-top:2px">'+e.nome.split(' ').map(w=>w[0]).join('').slice(0,2)+'</div><div style="min-width:0"><div style="font-size:13px;font-weight:500">'+e.nome+'</div><div style="font-size:11px;color:var(--txt2)">'+e.cnpj+' · '+(e.filiais||[]).length+' filial(is)</div><div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap">'+(e.filiais||[]).map(f=>'<span class="badge b-ok" style="font-size:10px">'+f.nome+'</span>').join('')+'</div></div></div><div style="display:flex;gap:6px;flex-shrink:0"><button class="btn-sm" onclick="abrirModalEmpresa(\''+e.id+'\')" title="Editar">✏️</button><button class="btn-sm" onclick="infoResetSenha(\''+e.nome+'\')" title="Info reset senha" style="color:var(--mega-sub)">🔑</button><button class="btn-sm" onclick="confirmarDelEmp(\''+e.id+'\')" style="color:var(--neg)">🗑️</button></div></div>').join(''):'<div style="font-size:13px;color:var(--txt2);padding:16px 0;text-align:center">Nenhuma empresa cadastrada.</div>';
 }
+
+// ── EMPRESA (PROPRIETÁRIO) ──────────────────────────────────
+async function iniciarEmpresa(){
+  let emp=empC.find(e=>e.id===pAt.empresa_id);
+  if(!emp){const {data}=await sb.from('empresas').select('*, filiais(*)').eq('id',pAt.empresa_id).single();emp=data;}
+  if(emp&&!empC.find(e=>e.id===emp.id))empC.push(emp);
+  document.getElementById('emp-nome-top').textContent=emp?.nome||'Empresa';
+  const filiais=emp?.filiais||[];
+  document.getElementById('e-sel-fil').innerHTML=filiais.map(f=>'<option value="'+f.id+'">'+f.nome+'</option>').join('');
+  const sm=document.getElementById('e-sel-mes');
+  sm.innerHTML=MESES.map(m=>'<option value="'+m+'">'+m+'</option>').join('');
+  sm.value=mesAtual();
+  await eCarregarLanc();
+  show('s-empresa');
+}
+async function eCarregarLanc(){
+  const fId=document.getElementById('e-sel-fil').value;
+  const mes=document.getElementById('e-sel-mes').value;
+  if(!fId)return;
+  document.getElementById('e-lanc-body').innerHTML='<tr><td colspan="10">'+ld('Buscando...')+'</td></tr>';
+  const {data}=await sb.from('lancamentos').select('*').eq('filial_id',fId).eq('mes_ano',mes).order('data_lanc');
+  await buildTable(document.getElementById('e-lanc-head'),document.getElementById('e-lanc-body'),data||[],true,'empresa');
+}
+function eTab(t,btn){
+  document.querySelectorAll('#s-empresa .tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  ['lancamentos','auditoria'].forEach(x=>document.getElementById('e-'+x).style.display='none');
+  document.getElementById('e-'+t).style.display='block';
+  if(t==='lancamentos')eCarregarLanc();
+  if(t==='auditoria'){
+    const el=document.getElementById('e-audit-lista');
+    el.innerHTML=ld('Carregando...');
+    sb.from('audit_log').select('*').eq('empresa_id',pAt.empresa_id).order('editado_em',{ascending:false}).limit(30)
+      .then(({data})=>el.innerHTML=buildAuditHtml(data||[]));
+  }
+}
+
+// ── FILIAL (OPERADOR) ────────────────────────────────────────
+async function iniciarFilial(){
+  if(!pAt.filial_id||!pAt.empresa_id){await mostrarSeletorFilial();return;}
+  await carregarFilial(pAt.filial_id);
+}
+async function mostrarSeletorFilial(){
+  const {data:emps}=await sb.from('empresas').select('*, filiais(*)').eq('ativa',true);
+  const empresasDisp=emps||[];
+  show('s-filial');
+  document.getElementById('fil-nome-top').textContent='Operador';
+  document.getElementById('fil-emp-top').textContent='Selecione empresa e filial';
+  document.getElementById('f-notice-filial').innerHTML='Selecione a <strong>empresa</strong> e <strong>filial</strong> para lançar os movimentos.';
+  const optsEmp=empresasDisp.map(e=>'<option value="'+e.id+'">'+e.nome+'</option>').join('');
+  document.getElementById('f-form-campos').innerHTML=
+    '<div class="grid2" style="margin-bottom:12px">'+
+    '<div class="irow"><label>Empresa</label><select id="sel-emp-op" onchange="atualizarFiliaisOp()"><option value="">Selecione...</option>'+optsEmp+'</select></div>'+
+    '<div class="irow"><label>Filial</label><select id="sel-fil-op"><option value="">Selecione a empresa primeiro</option></select></div>'+
+    '</div>'+
+    '<button class="btn" style="width:100%;padding:11px;margin-bottom:12px" onclick="confirmarFilialOp()">✅ Confirmar e lançar</button>';
+  window._empresasOp = empresasDisp;
+}
+function atualizarFiliaisOp(){
+  const eId=document.getElementById('sel-emp-op').value;
+  const emp=(window._empresasOp||[]).find(e=>e.id===eId);
+  const sf=document.getElementById('sel-fil-op');
+  sf.innerHTML=emp?(emp.filiais||[]).map(f=>'<option value="'+f.id+'">'+f.nome+'</option>').join(''):'<option value="">Selecione a empresa primeiro</option>';
+}
+async function confirmarFilialOp(){
+  const eId=document.getElementById('sel-emp-op')?.value;
+  const fId=document.getElementById('sel-fil-op')?.value;
+  if(!eId||!fId){alert('Selecione empresa e filial');return;}
+  pAt.empresa_id=eId;pAt.filial_id=fId;
+  await carregarFilial(fId);
+}
+async function carregarFilial(filialId){
+  const {data:fil}=await sb.from('filiais').select('*, empresas(nome)').eq('id',filialId).single();
+  document.getElementById('fil-nome-top').textContent='Operador · '+(fil?.nome||'Filial');
+  document.getElementById('fil-emp-top').textContent=(fil?.empresas?.nome||'Empresa')+' · edições em vermelho';
+  document.getElementById('f-notice-filial').innerHTML='Lançamentos identificados pela <strong>MegaFllex Auditoria</strong>. Filial: <strong>'+(fil?.nome||'')+'</strong>';
+  const sm=document.getElementById('f-sel-mes');
+  sm.innerHTML=MESES.map(m=>'<option value="'+m+'">'+m+'</option>').join('');
+  sm.value=mesAtual();
+  document.getElementById('f-data').value=hoje();
+  renderFormFilial();
+  show('s-filial');
+}
+function renderFormFilial(){
+  const g={};camC.forEach(c=>{if(!g[c.grupo])g[c.grupo]=[];g[c.grupo].push(c);});
+  let h='';
+  Object.entries(g).forEach(([gr,cs])=>{
+    h+='<div class="grupo-titulo">📁 '+gr+'</div><div class="grid2">';
+    cs.forEach(c=>{h+='<div class="irow"><label>'+c.label+'</label>'+(c.tipo==='moeda'?'<div class="input-brl"><span class="prefix">R$</span><input type="text" id="fl-'+c.id+'" placeholder="0,00" inputmode="decimal"></div>':'<input type="text" id="fl-'+c.id+'" placeholder="ok">')+'</div>';});
+    h+='</div>';
+  });
+  document.getElementById('f-form-campos').innerHTML=h;
+  camC.filter(c=>c.tipo==='moeda').forEach(c=>{const el=document.getElementById('fl-'+c.id);if(el)mBRL(el);});
+}
+async function salvarLanc(){
+  const dv=document.getElementById('f-data').value;
+  if(!dv){alert('Informe a data');return;}
+  const mesAno=mDA(dv);const valores={};let total=0;
+  camC.forEach(c=>{const el=document.getElementById('fl-'+c.id);if(!el)return;const v=c.tipo==='moeda'?pBRL(el.value):(el.value||'ok');valores[c.label]=String(v);if(c.tipo==='moeda')total+=parseFloat(v)||0;});
+  const {error}=await sb.from('lancamentos').upsert({empresa_id:pAt.empresa_id,filial_id:pAt.filial_id,mes_ano:mesAno,data_lanc:dv,valores,total_dif:total,criado_por:uAt.id},{onConflict:'filial_id,data_lanc'});
+  if(error){alert('Erro ao salvar: '+error.message);return;}
+  camC.forEach(c=>{const el=document.getElementById('fl-'+c.id);if(el)el.value='';});
+  const fb=document.getElementById('f-fb');fb.style.display='block';setTimeout(()=>fb.style.display='none',2500);
+}
+async function fCarregarHist(){
+  const mes=document.getElementById('f-sel-mes').value;
+  document.getElementById('f-hist-body').innerHTML='<tr><td colspan="10">'+ld('Buscando...')+'</td></tr>';
+  const {data}=await sb.from('lancamentos').select('*').eq('filial_id',pAt.filial_id).eq('mes_ano',mes).order('data_lanc');
+  await buildTable(document.getElementById('f-hist-head'),document.getElementById('f-hist-body'),data||[],true,'filial');
+}
+function fTab(t,btn){
+  document.querySelectorAll('#s-filial .tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  document.getElementById('f-lancar').style.display=t==='lancar'?'block':'none';
+  document.getElementById('f-historico').style.display=t==='historico'?'block':'none';
+  if(t==='historico')fCarregarHist();
+}
+
 async function buildTable(hEl,bEl,rows,comEdit,quem){
   const nC=camC.length+3+(comEdit?1:0);
   let h='<tr><th style="text-align:left;min-width:65px">Data</th>';
