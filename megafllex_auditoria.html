@@ -1256,7 +1256,7 @@ async function salvarEdicao(){
   await sb.from('audit_log').insert(mud.map(m=>({lancamento_id:eLancId,empresa_id:l.empresa_id,filial_id:l.filial_id,mes_ano:l.mes_ano,data_lanc:l.data_lanc,campo_label:m.campo,valor_antes:m.antes,valor_depois:m.depois,editado_por:uAt.id,papel_editor:papel,nome_editor:pAt.nome||papel,editado_em:ts})));
   voltarEdit();
 }
-document.getElementById('edit-save-btn').onclick=salvarEdicao;
+document.addEventListener('DOMContentLoaded',()=>{const b=document.getElementById('edit-save-btn');if(b)b.onclick=salvarEdicao;});
 function voltarEdit(){
   if(eQuem==='empresa'){eCarregarLanc();show('s-empresa');}
   else if(eQuem==='opmega'){omCarregarLanc();show('s-opmega');}
