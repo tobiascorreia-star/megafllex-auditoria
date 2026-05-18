@@ -326,6 +326,7 @@ tr:hover td:first-child{background:var(--bg2)}
         <div style="font-size:13px;font-weight:500;color:var(--prop-txt)" id="emp-nome-top">Empresa</div>
         <div style="font-size:10px;color:var(--prop-txt)">Proprietário · edições em laranja</div>
       </div>
+      <button onclick="ciclarTema()" id="btn-tema-emp" title="Alternar tema" style="border:0.5px solid var(--prop-brd);background:var(--bg);border-radius:var(--r);cursor:pointer;padding:4px 8px;font-size:14px;color:var(--prop-txt)">☀️</button>
     </div>
     <div class="inner">
       <div class="tab-bar">
@@ -395,6 +396,7 @@ tr:hover td:first-child{background:var(--bg2)}
         <div style="font-size:13px;font-weight:500;color:var(--oper-txt)" id="fil-nome-top">Operador</div>
         <div style="font-size:10px;color:var(--oper-txt)" id="fil-emp-top">Filial</div>
       </div>
+      <button onclick="ciclarTema()" id="btn-tema-fil" title="Alternar tema" style="border:0.5px solid var(--oper-brd);background:var(--bg);border-radius:var(--r);cursor:pointer;padding:4px 8px;font-size:14px;color:var(--oper-txt)">☀️</button>
     </div>
     <div class="inner">
       <div class="tab-bar">
@@ -618,8 +620,9 @@ function setTema(tema){
   if(document.documentElement)document.documentElement.setAttribute('data-tema', tema);
   const icons={claro:'☀️',escuro:'🌙',sistema:'⚙️'};
   // Atualizar botão do topo se existir
-  const btnTopo=document.getElementById('btn-tema-topo');
-  if(btnTopo)btnTopo.textContent=icons[tema]||'☀️';
+  ['btn-tema-topo','btn-tema-emp','btn-tema-fil','btn-tema-opmega'].forEach(id=>{
+    const b=document.getElementById(id);if(b)b.textContent=icons[tema]||'☀️';
+  });
   // Destacar botão ativo no login
   ['claro','escuro','sistema'].forEach(t=>{
     const btn=document.getElementById('btn-'+t);
