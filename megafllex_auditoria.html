@@ -838,6 +838,50 @@ async function renderDash(){
 function renderEmps(){
   document.getElementById('lista-empresas').innerHTML=empC.length?empC.map(e=>'<div class="emp-card" style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px"><div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0"><div class="avatar av-emp" style="width:38px;height:38px;font-size:13px;flex-shrink:0;margin-top:2px">'+e.nome.split(' ').map(w=>w[0]).join('').slice(0,2)+'</div><div style="min-width:0"><div style="font-size:13px;font-weight:500">'+e.nome+'</div><div style="font-size:11px;color:var(--txt2)">'+e.cnpj+' · '+(e.filiais||[]).length+' filial(is)</div><div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap">'+(e.filiais||[]).map(f=>'<span class="badge b-ok" style="font-size:10px">'+f.nome+'</span>').join('')+'</div></div></div><div style="display:flex;gap:6px;flex-shrink:0"><button class="btn-sm" onclick="abrirModalEmpresa(\''+e.id+'\')" title="Editar">✏️</button><button class="btn-sm" onclick="infoResetSenha(\''+e.nome+'\')" title="Info reset senha" style="color:var(--mega-sub)">🔑</button><button class="btn-sm" onclick="confirmarDelEmp(\''+e.id+'\')" style="color:var(--neg)">🗑️</button></div></div>').join(''):'<div style="font-size:13px;color:var(--txt2);padding:16px 0;text-align:center">Nenhuma empresa cadastrada.</div>';
 }
+async function buildTable(hEl,bEl,rows,comEdit,quem){
+  const nC=camC.length+3+(comEdit?1:0);
+  let h='<tr><th style="text-align:left;min-width:65px">Data</th>';
+  camC.forEach(c=>h+='<th style="min-width:88px">'+c.label+'</th>');
+  h+='<th style="min-width:95px">Total dif.</th><th style="min-width:80px">Status</th>';
+  if(comEdit)h+='<th style="min-width:50px">Edit.</th>';
+  h+='</tr>';hEl.innerHTML=h;
+  if(!rows.length){bEl.innerHTML='<tr><td colspan="'+nC+'" style="text-align:center;padding:20px;color:var(--txt2)">Nenhum lançamento neste período.</td></tr>';return;}
+  const ids=rows.map(r=>r.id);
+  const {data:ed}=await sb.from('audit_log').select('lancamento_id,campo_label,papel_editor,nome_editor').in('lancamento_id',ids);
+  const eMap={},nMap={};
+  (ed||[]).forEach(e=>{if(!eMap[e.lancamento_id])eMap[e.lancamento_id]={};if(!nMap[e.lancamento_id])nMap[e.lancamento_id]={};eMap[e.lancamento_id][e.campo_label]=e.papel_editor;nMap[e.lancamento_id][e.campo_label]=e.nome_editor||e.papel_editor;});
+  const tots={};camC.forEach(c=>tots[c.label]=0);
+  let tg=0;
+  const html=rows.map(l=>{
+    const vs=l.valores||{};const tot=l.total_dif||0;tg+=tot;
+    const cEd=eMap[l.id]||{};const nEd=nMap[l.id]||{};
+    const temP=Object.values(cEd).includes('proprietario');
+    const temO=Object.values(cEd).includes('operador');
+    let tds='<td style="text-align:left">'+l.data_lanc?.slice(8,10)+'/'+l.data_lanc?.slice(5,7)+'</td>';
+    camC.forEach(c=>{
+      const rv=vs[c.label];const v=c.tipo==='moeda'?(parseFloat(rv)||0):(rv||'ok');
+      if(c.tipo==='moeda')tots[c.label]+=(parseFloat(rv)||0);
+      const ep=cEd[c.label];const ne=nEd[c.label]||'';
+      const cc=ep==='proprietario'?'cel-prop':ep==='operador'?'cel-oper':'';
+      const ic=ep?' <span style="font-size:9px" title="Editado por: '+ne+'">✎</span>':'';
+      tds+='<td class="'+(c.tipo==='moeda'?cls(v):'')+' '+cc+'" style="'+(c.tipo==='moeda'&&v<0?'color:#c0392b;font-weight:500':c.tipo==='moeda'&&v>0?'color:#1D9E75;font-weight:500':'')+' " title="'+(ep?'Editado por: '+ne:'')+'">'+fR(v)+ic+'</td>';
+    });
+    let st='';
+    if(temP)st+='<span class="badge b-prop">✎ prop.</span> ';
+    if(temO)st+='<span class="badge b-oper">✎ oper.</span>';
+    if(!temP&&!temO)st=Math.abs(tot)<0.5?'<span class="badge b-ok">ok</span>':'<span class="badge b-diff">dif.</span>';
+    tds+='<td class="'+cls(tot)+'">'+fT(tot)+'</td><td>'+st+'</td>';
+    if(comEdit)tds+='<td><button onclick="abrirEdit(\''+l.id+'\',\''+quem+'\')" class="btn-sm" title="Editar">✏️</button></td>';
+    return'<tr>'+tds+'</tr>';
+  }).join('');
+  let tRow='<tr class="total-row"><td style="text-align:left">Total</td>';
+  camC.forEach(c=>{const v=tots[c.label]||0;tRow+='<td class="'+cls(v)+'">'+fT(v)+'</td>';});
+  tRow+='<td class="'+cls(tg)+'">'+fT(tg)+'</td><td></td>';
+  if(comEdit)tRow+='<td></td>';
+  tRow+='</tr>';
+  bEl.innerHTML=html+tRow;
+}
+
 async function mCarregarLanc(){
   const eId=document.getElementById('m-sel-emp').value;
   const fId=document.getElementById('m-sel-fil').value;
@@ -1026,49 +1070,6 @@ async function salvarEmpresa(id){
       '</div>'
     ),300);
   }
-async function buildTable(hEl,bEl,rows,comEdit,quem){
-  const nC=camC.length+3+(comEdit?1:0);
-  let h='<tr><th style="text-align:left;min-width:65px">Data</th>';
-  camC.forEach(c=>h+='<th style="min-width:88px">'+c.label+'</th>');
-  h+='<th style="min-width:95px">Total dif.</th><th style="min-width:80px">Status</th>';
-  if(comEdit)h+='<th style="min-width:50px">Edit.</th>';
-  h+='</tr>';hEl.innerHTML=h;
-  if(!rows.length){bEl.innerHTML='<tr><td colspan="'+nC+'" style="text-align:center;padding:20px;color:var(--txt2)">Nenhum lançamento neste período.</td></tr>';return;}
-  const ids=rows.map(r=>r.id);
-  const {data:ed}=await sb.from('audit_log').select('lancamento_id,campo_label,papel_editor,nome_editor').in('lancamento_id',ids);
-  const eMap={},nMap={};
-  (ed||[]).forEach(e=>{if(!eMap[e.lancamento_id])eMap[e.lancamento_id]={};if(!nMap[e.lancamento_id])nMap[e.lancamento_id]={};eMap[e.lancamento_id][e.campo_label]=e.papel_editor;nMap[e.lancamento_id][e.campo_label]=e.nome_editor||e.papel_editor;});
-  const tots={};camC.forEach(c=>tots[c.label]=0);
-  let tg=0;
-  const html=rows.map(l=>{
-    const vs=l.valores||{};const tot=l.total_dif||0;tg+=tot;
-    const cEd=eMap[l.id]||{};const nEd=nMap[l.id]||{};
-    const temP=Object.values(cEd).includes('proprietario');
-    const temO=Object.values(cEd).includes('operador');
-    let tds='<td style="text-align:left">'+l.data_lanc?.slice(8,10)+'/'+l.data_lanc?.slice(5,7)+'</td>';
-    camC.forEach(c=>{
-      const rv=vs[c.label];const v=c.tipo==='moeda'?(parseFloat(rv)||0):(rv||'ok');
-      if(c.tipo==='moeda')tots[c.label]+=(parseFloat(rv)||0);
-      const ep=cEd[c.label];const ne=nEd[c.label]||'';
-      const cc=ep==='proprietario'?'cel-prop':ep==='operador'?'cel-oper':'';
-      const ic=ep?' <span style="font-size:9px" title="Editado por: '+ne+'">✎</span>':'';
-      tds+='<td class="'+(c.tipo==='moeda'?cls(v):'')+' '+cc+'" style="'+(c.tipo==='moeda'&&v<0?'color:#c0392b;font-weight:500':c.tipo==='moeda'&&v>0?'color:#1D9E75;font-weight:500':'')+' " title="'+(ep?'Editado por: '+ne:'')+'">'+fR(v)+ic+'</td>';
-    });
-    let st='';
-    if(temP)st+='<span class="badge b-prop">✎ prop.</span> ';
-    if(temO)st+='<span class="badge b-oper">✎ oper.</span>';
-    if(!temP&&!temO)st=Math.abs(tot)<0.5?'<span class="badge b-ok">ok</span>':'<span class="badge b-diff">dif.</span>';
-    tds+='<td class="'+cls(tot)+'">'+fT(tot)+'</td><td>'+st+'</td>';
-    if(comEdit)tds+='<td><button onclick="abrirEdit(\''+l.id+'\',\''+quem+'\')" class="btn-sm" title="Editar">✏️</button></td>';
-    return'<tr>'+tds+'</tr>';
-  }).join('');
-  let tRow='<tr class="total-row"><td style="text-align:left">Total</td>';
-  camC.forEach(c=>{const v=tots[c.label]||0;tRow+='<td class="'+cls(v)+'">'+fT(v)+'</td>';});
-  tRow+='<td class="'+cls(tg)+'">'+fT(tg)+'</td><td></td>';
-  if(comEdit)tRow+='<td></td>';
-  tRow+='</tr>';
-  bEl.innerHTML=html+tRow;
-}
 
 // OCULTAR ZEROS
 function toggleZeros(ctx){
