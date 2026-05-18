@@ -371,6 +371,19 @@ function fFundo(e){if(e.target.classList.contains('modal-backdrop'))fecharModal(
 function mascaraCNPJ(el){let v=el.value.replace(/\D/g,'').slice(0,14);if(v.length>12)v=v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,'$1.$2.$3/$4-$5');else if(v.length>8)v=v.replace(/(\d{2})(\d{3})(\d{3})(\d+)/,'$1.$2.$3/$4');else if(v.length>5)v=v.replace(/(\d{2})(\d{3})(\d+)/,'$1.$2.$3');else if(v.length>2)v=v.replace(/(\d{2})(\d+)/,'$1.$2');el.value=v;}
 
 // AUTH
+// GERA SENHA ALEATÓRIA FORTE
+function geraSenha(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+  let s='';
+  // Garantir pelo menos 1 de cada tipo
+  s+=chars[Math.floor(Math.random()*26)]; // maiúscula
+  s+=chars[26+Math.floor(Math.random()*26)]; // minúscula
+  s+=chars[52+Math.floor(Math.random()*8)]; // número
+  s+=chars[60+Math.floor(Math.random()*4)]; // especial
+  for(let i=4;i<12;i++) s+=chars[Math.floor(Math.random()*chars.length)];
+  return s.split('').sort(()=>Math.random()-0.5).join('');
+}
+
 // TEMA
 function setTema(tema){
   localStorage.setItem('megafllex_tema', tema);
@@ -546,7 +559,7 @@ function abrirModalEmpresa(id){
   const emp=id?empC.find(e=>e.id===id):null;
   const filStr=emp?(emp.filiais||[]).map(f=>f.nome).join('\n'):'';
   const bUsr=`<div style="margin-top:10px;padding:10px 12px;background:var(--mega);border-radius:var(--r);border:0.5px solid var(--mega-brd)">
-    <div style="font-size:11px;font-weight:500;color:var(--mega-txt);margin-bottom:8px">🛡️ ${id?'Adicionar usuário':'Cadastrar usuários'} — ${id?'deixe em branco se não quiser adicionar':'criados automaticamente no Supabase'}</div>
+    <div style="font-size:11px;font-weight:500;color:var(--mega-txt);margin-bottom:8px"><span style=\"filter:hue-rotate(200deg) saturate(2)\">🛡️</span> ${id?'Adicionar usuário':'Cadastrar usuários'} — ${id?'deixe em branco se não quiser adicionar':'criados automaticamente no Supabase'}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
       <div>
         <div style="font-size:10px;font-weight:500;color:var(--mega-sub);margin-bottom:4px">Proprietário</div>
@@ -600,194 +613,60 @@ async function salvarEmpresa(id){
     if(fEx&&fEx.length)filiaisIds=[fEx[0].id];
   }
   // Criar usuários (tanto em nova quanto edição)
-  const SENHA='Mega@2026';
+  // Gerar senhas únicas para cada usuário
+  const senhaProp=geraSenha();
+  const senhaOper=geraSenha();
   const propEmail=(document.getElementById('mo-prop-email')?.value||'').trim();
   const propNome=(document.getElementById('mo-prop-nome')?.value||'').trim();
   const operEmail=(document.getElementById('mo-oper-email')?.value||'').trim();
   const operNome=(document.getElementById('mo-oper-nome')?.value||'').trim();
-  const erros=[],msgs=[];
+  const erros=[],msgs=[],credenciais=[];
   if(propEmail&&empId){
-    const {data:pu,error:pe}=await sb.auth.signUp({email:propEmail,password:SENHA,options:{data:{nome:propNome||propEmail}}});
+    const {data:pu,error:pe}=await sb.auth.signUp({email:propEmail,password:senhaProp,options:{data:{nome:propNome||propEmail}}});
     if(pe){erros.push(pe.message);msgs.push('❌ Proprietário: '+propEmail+' — '+pe.message);}
     else if(pu?.user){
       await sb.from('perfis').insert({user_id:pu.user.id,papel:'proprietario',empresa_id:empId,filial_id:null,nome:propNome||propEmail});
       msgs.push('✅ Proprietário: '+propEmail);
+      credenciais.push({papel:'Proprietário',email:propEmail,senha:senhaProp});
     }
   }
   if(operEmail&&empId){
     if(propEmail)await new Promise(r=>setTimeout(r,3000));
-    const {data:ou,error:oe}=await sb.auth.signUp({email:operEmail,password:SENHA,options:{data:{nome:operNome||operEmail}}});
+    const {data:ou,error:oe}=await sb.auth.signUp({email:operEmail,password:senhaOper,options:{data:{nome:operNome||operEmail}}});
     if(oe){erros.push(oe.message);msgs.push('❌ Operador: '+operEmail+' — '+oe.message);}
     else if(ou?.user){
       await sb.from('perfis').insert({user_id:ou.user.id,papel:'operador',empresa_id:empId,filial_id:filiaisIds[0]||null,nome:operNome||operEmail});
       msgs.push('✅ Operador: '+operEmail);
+      credenciais.push({papel:'Operador',email:operEmail,senha:senhaOper});
     }
   }
   fecharModal();
   const {data:empAtual}=await sb.from('empresas').select('*, filiais(*)').eq('ativa',true);
   empC=empAtual||[];renderEmps();renderDash();preSelMega();
   if(msgs.length){
-    setTimeout(()=>abrirModal('<div class="modal-box" onclick="event.stopPropagation()"><div class="modal-handle"></div>'+
+    const credsHtml=credenciais.map(cr=>
+      '<div style="background:var(--bg2);border:0.5px solid var(--brd2);border-radius:var(--r);padding:8px 10px;margin-top:6px;font-size:11px">'+
+      '<div style="font-weight:500;margin-bottom:3px">'+cr.papel+'</div>'+
+      '<div>📧 <code>'+cr.email+'</code></div>'+
+      '<div style="margin-top:2px">🔑 <code style="color:#1D9E75;font-weight:600">'+cr.senha+'</code></div>'+
+      '</div>'
+    ).join('');
+    setTimeout(()=>abrirModal(
+      '<div class="modal-box" onclick="event.stopPropagation()">'+
+      '<div class="modal-handle"></div>'+
       '<div class="modal-header"><h3>'+(id?'Empresa atualizada!':'Empresa criada!')+'</h3></div>'+
-      '<div class="notice n-mega" style="flex-direction:column;gap:5px;align-items:flex-start">'+
+      '<div class="notice n-mega" style="flex-direction:column;gap:4px;align-items:flex-start">'+
       msgs.map(m=>'<div style="font-size:12px">'+m+'</div>').join('')+
-      (erros.length
-        ?'<div style="font-size:10px;color:var(--mega-sub);margin-top:4px">Aguarde 1 minuto e tente novamente pelo botão ✏️</div>'
-        :'<div style="font-size:10px;color:var(--mega-sub);margin-top:4px">Senha padrão: <strong>Mega@2026</strong></div>')+
-      '</div><button class="btn" style="width:100%;margin-top:10px" onclick="fecharModal()">OK</button></div>'),300);
+      '</div>'+
+      (credenciais.length?
+        '<div style="font-size:11px;font-weight:600;margin:10px 0 4px;color:var(--neg)">⚠️ Anote agora — credenciais não serão exibidas novamente!</div>'+
+        credsHtml:'')+
+      (erros.length?
+        '<div style="font-size:10px;color:var(--neg);margin-top:8px">'+erros.join('<br>')+'<br>Aguarde 1 min e tente pelo botão ✏️</div>':'')+
+      '<button class="btn" style="width:100%;margin-top:12px" onclick="fecharModal()">✅ Anotei as credenciais</button>'+
+      '</div>'
+    ),300);
   }
-}
-function confirmarDelEmp(id){
-  const emp=empC.find(e=>e.id===id);
-  abrirModal('<div class="modal-box" onclick="event.stopPropagation()"><div class="modal-handle"></div><div class="modal-header"><h3>Remover empresa</h3><button onclick="fecharModal()" style="border:none;background:none;cursor:pointer;font-size:18px">×</button></div><div class="notice n-danger">Remover <strong>'+emp.nome+'</strong>? Esta ação não pode ser desfeita.</div><div class="modal-footer"><button class="btn" style="flex:1;color:var(--txt2)" onclick="fecharModal()">Cancelar</button><button class="btn-danger" style="flex:1" onclick="delEmp(\''+id+'\')">🗑️ Remover</button></div></div>');
-}
-async function delEmp(id){await sb.from('empresas').update({ativa:false}).eq('id',id);fecharModal();const {data}=await sb.from('empresas').select('*, filiais(*)').eq('ativa',true);empC=data||[];renderEmps();renderDash();}
-function infoResetSenha(nome){abrirModal('<div class="modal-box" onclick="event.stopPropagation()"><div class="modal-handle"></div><div class="modal-header"><h3>🔑 Resetar senha</h3></div><div class="notice n-mega">Para resetar a senha de usuário de <strong>'+nome+'</strong>:<br><br>Acesse <strong>Supabase → Authentication → Users</strong>, localize o usuário e clique em <strong>"Send password recovery"</strong>.</div><button class="btn" style="width:100%;margin-top:10px" onclick="fecharModal()">Entendido</button></div>');}
-
-// EMPRESA
-async function iniciarEmpresa(){
-  let emp=empC.find(e=>e.id===pAt.empresa_id);
-  if(!emp){const {data}=await sb.from('empresas').select('*, filiais(*)').eq('id',pAt.empresa_id).single();emp=data;}
-  if(emp&&!empC.find(e=>e.id===emp.id))empC.push(emp);
-  document.getElementById('emp-nome-top').textContent=emp?.nome||'Empresa';
-  const filiais=emp?.filiais||[];
-  document.getElementById('e-sel-fil').innerHTML=filiais.map(f=>'<option value="'+f.id+'">'+f.nome+'</option>').join('');
-  const sm=document.getElementById('e-sel-mes');
-  sm.innerHTML=MESES.map(m=>'<option value="'+m+'">'+m+'</option>').join('');
-  sm.value=mesAtual();
-  await eCarregarLanc();show('s-empresa');
-}
-async function eCarregarLanc(){
-  const fId=document.getElementById('e-sel-fil').value;
-  const mes=document.getElementById('e-sel-mes').value;
-  if(!fId)return;
-  document.getElementById('e-lanc-body').innerHTML='<tr><td colspan="10">'+ld('Buscando...')+'</td></tr>';
-  const {data}=await sb.from('lancamentos').select('*').eq('filial_id',fId).eq('mes_ano',mes).order('data_lanc');
-  await buildTable(document.getElementById('e-lanc-head'),document.getElementById('e-lanc-body'),data||[],true,'empresa');
-}
-function eTab(t,btn){
-  document.querySelectorAll('#s-empresa .tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
-  ['lancamentos','auditoria'].forEach(x=>document.getElementById('e-'+x).style.display='none');
-  document.getElementById('e-'+t).style.display='block';
-  if(t==='lancamentos')eCarregarLanc();
-  if(t==='auditoria'){const el=document.getElementById('e-audit-lista');el.innerHTML=ld('Carregando...');sb.from('audit_log').select('*').eq('empresa_id',pAt.empresa_id).eq('papel_editor','proprietario').order('editado_em',{ascending:false}).limit(30).then(({data})=>el.innerHTML=buildAuditHtml(data||[]));}
-}
-
-// FILIAL
-async function iniciarFilial(){
-  // Se operador não tem filial/empresa definida, mostrar seletor
-  if(!pAt.filial_id || !pAt.empresa_id){
-    await mostrarSeletorFilial();
-    return;
-  }
-  await carregarFilial(pAt.filial_id);
-}
-
-async function mostrarSeletorFilial(){
-  // Buscar todas as empresas e filiais disponíveis
-  const {data:emps}=await sb.from('empresas').select('*, filiais(*)').eq('ativa',true);
-  const empresasDisp=emps||[];
-  show('s-filial');
-  document.getElementById('fil-nome-top').textContent='Operador';
-  document.getElementById('fil-emp-top').textContent='Selecione empresa e filial';
-  document.getElementById('f-notice-filial').innerHTML='Selecione a <strong>empresa</strong> e <strong>filial</strong> para lançar os movimentos.';
-
-  // Montar seletor no formulário
-  const grupos_html=`<div class="grid2" style="margin-bottom:12px">
-    <div class="irow"><label>Empresa</label>
-      <select id="sel-emp-op" onchange="atualizarFiliaisOp(${JSON.stringify(empresasDisp).replace(/"/g,'&quot;')})">
-        <option value="">Selecione...</option>
-        ${empresasDisp.map(e=>'<option value="'+e.id+'">'+e.nome+'</option>').join('')}
-      </select>
-    </div>
-    <div class="irow"><label>Filial</label>
-      <select id="sel-fil-op"><option value="">Selecione a empresa primeiro</option></select>
-    </div>
-  </div>
-  <button class="btn" style="width:100%;padding:11px;margin-bottom:12px" onclick="confirmarFilialOp()">✅ Confirmar e lançar</button>`;
-  document.getElementById('f-form-campos').innerHTML=grupos_html;
-  document.getElementById('f-fb').style.display='none';
-}
-
-function atualizarFiliaisOp(empresas){
-  const eId=document.getElementById('sel-emp-op').value;
-  const emp=empresas.find(e=>e.id===eId);
-  const sf=document.getElementById('sel-fil-op');
-  sf.innerHTML=emp?(emp.filiais||[]).map(f=>'<option value="'+f.id+'">'+f.nome+'</option>').join(''):'<option value="">Selecione a empresa primeiro</option>';
-}
-
-async function confirmarFilialOp(){
-  const eId=document.getElementById('sel-emp-op')?.value;
-  const fId=document.getElementById('sel-fil-op')?.value;
-  if(!eId||!fId){alert('Selecione empresa e filial');return;}
-  // Atualizar perfil temporariamente (apenas em memória)
-  pAt.empresa_id=eId;
-  pAt.filial_id=fId;
-  await carregarFilial(fId);
-}
-
-async function carregarFilial(filialId){
-  const {data:fil}=await sb.from('filiais').select('*, empresas(nome)').eq('id',filialId).single();
-  document.getElementById('fil-nome-top').textContent='Operador · '+(fil?.nome||'Filial');
-  document.getElementById('fil-emp-top').textContent=(fil?.empresas?.nome||'Empresa')+' · edições em vermelho';
-  document.getElementById('f-notice-filial').innerHTML='Lançamentos identificados pela <strong>MegaFllex Auditoria</strong>. Filial: <strong>'+(fil?.nome||'')+'</strong>';
-  const sm=document.getElementById('f-sel-mes');
-  sm.innerHTML=MESES.map(m=>'<option value="'+m+'">'+m+'</option>').join('');
-  sm.value=mesAtual();
-  document.getElementById('f-data').value=hoje();
-  renderFormFilial();
-  show('s-filial');
-}
-function renderFormFilial(){
-  const g={};camC.forEach(c=>{if(!g[c.grupo])g[c.grupo]=[];g[c.grupo].push(c);});
-  let h='';
-  Object.entries(g).forEach(([gr,cs])=>{
-    h+='<div class="grupo-titulo">📁 '+gr+'</div><div class="grid2">';
-    cs.forEach(c=>{h+='<div class="irow"><label>'+c.label+'</label>'+(c.tipo==='moeda'?'<div class="input-brl"><span class="prefix">R$</span><input type="text" id="fl-'+c.id+'" placeholder="0,00" inputmode="decimal"></div>':'<input type="text" id="fl-'+c.id+'" placeholder="ok">')+'</div>';});
-    h+='</div>';
-  });
-  document.getElementById('f-form-campos').innerHTML=h;
-  camC.filter(c=>c.tipo==='moeda').forEach(c=>{const el=document.getElementById('fl-'+c.id);if(el)mBRL(el);});
-}
-async function salvarLanc(){
-  const dv=document.getElementById('f-data').value;
-  if(!dv){alert('Informe a data');return;}
-  const mesAno=mDA(dv);
-  const valores={};let total=0;
-  camC.forEach(c=>{const el=document.getElementById('fl-'+c.id);if(!el)return;const v=c.tipo==='moeda'?pBRL(el.value):(el.value||'ok');valores[c.label]=String(v);if(c.tipo==='moeda')total+=parseFloat(v)||0;});
-  const {error}=await sb.from('lancamentos').upsert({empresa_id:pAt.empresa_id,filial_id:pAt.filial_id,mes_ano:mesAno,data_lanc:dv,valores,total_dif:total,criado_por:uAt.id},{onConflict:'filial_id,data_lanc'});
-  if(error){alert('Erro ao salvar: '+error.message);return;}
-  camC.forEach(c=>{const el=document.getElementById('fl-'+c.id);if(el)el.value='';});
-  const fb=document.getElementById('f-fb');fb.style.display='block';setTimeout(()=>fb.style.display='none',2500);
-}
-async function fCarregarHist(){
-  const mes=document.getElementById('f-sel-mes').value;
-  document.getElementById('f-hist-body').innerHTML='<tr><td colspan="10">'+ld('Buscando...')+'</td></tr>';
-  const {data}=await sb.from('lancamentos').select('*').eq('filial_id',pAt.filial_id).eq('mes_ano',mes).order('data_lanc');
-  await buildTable(document.getElementById('f-hist-head'),document.getElementById('f-hist-body'),data||[],true,'filial');
-}
-function fTab(t,btn){
-  document.querySelectorAll('#s-filial .tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
-  document.getElementById('f-lancar').style.display=t==='lancar'?'block':'none';
-  document.getElementById('f-historico').style.display=t==='historico'?'block':'none';
-  if(t==='historico')fCarregarHist();
-}
-
-// TABELA
-async function buildTable(hEl,bEl,rows,comEdit,quem){
-  const nC=camC.length+3+(comEdit?1:0);
-  let h='<tr><th style="text-align:left;min-width:65px">Data</th>';
-  camC.forEach(c=>h+='<th style="min-width:88px">'+c.label+'</th>');
-  h+='<th style="min-width:95px">Total dif.</th><th style="min-width:80px">Status</th>';
-  if(comEdit)h+='<th style="min-width:50px">Edit.</th>';
-  h+='</tr>';hEl.innerHTML=h;
-  if(!rows.length){bEl.innerHTML='<tr><td colspan="'+nC+'" style="text-align:center;padding:20px;color:var(--txt2)">Nenhum lançamento neste período.</td></tr>';return;}
-  const ids=rows.map(r=>r.id);
-  const {data:ed}=await sb.from('audit_log').select('lancamento_id,campo_label,papel_editor,nome_editor').in('lancamento_id',ids);
-  const eMap={},nMap={};
-  (ed||[]).forEach(e=>{if(!eMap[e.lancamento_id])eMap[e.lancamento_id]={};if(!nMap[e.lancamento_id])nMap[e.lancamento_id]={};eMap[e.lancamento_id][e.campo_label]=e.papel_editor;nMap[e.lancamento_id][e.campo_label]=e.nome_editor||e.papel_editor;});
-  const tots={};camC.forEach(c=>tots[c.label]=0);
-  let tg=0;
   const html=rows.map(l=>{
     const vs=l.valores||{};const tot=l.total_dif||0;tg+=tot;
     const cEd=eMap[l.id]||{};const nEd=nMap[l.id]||{};
