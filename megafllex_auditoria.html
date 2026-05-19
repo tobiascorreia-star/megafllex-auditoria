@@ -952,7 +952,7 @@ async function salvarLanc(){
   const mesAno=mDA(dv);const valores={};let total=0;
   camC.forEach(c=>{const el=document.getElementById('fl-'+c.id);if(!el)return;const v=c.tipo==='moeda'?pBRL(el.value):(el.value||'ok');valores[c.label]=String(v);if(c.tipo==='moeda')total+=parseFloat(v)||0;});
   const {error}=await sb.from('lancamentos').upsert({empresa_id:pAt.empresa_id,filial_id:pAt.filial_id,mes_ano:mesAno,data_lanc:dv,valores,total_dif:total,criado_por:uAt.id},{onConflict:'filial_id,data_lanc'});
-  if(error){alert('Erro ao salvar: '+error.message);return;}
+  if(error){_salvandoEdicao=false;alert('Erro ao salvar: '+error.message);return;}
   camC.forEach(c=>{const el=document.getElementById('fl-'+c.id);if(el)el.value='';});
   const fb=document.getElementById('f-fb');fb.style.display='block';setTimeout(()=>fb.style.display='none',2500);
 }
@@ -1281,7 +1281,10 @@ async function abrirEdit(id,quem){
   camC.filter(c=>c.tipo==='moeda').forEach(c=>{const el=document.getElementById('ei-'+c.id);if(el)mBRL(el);});
   show('s-edit');
 }
+let _salvandoEdicao=false;
 async function salvarEdicao(){
+  if(_salvandoEdicao)return;
+  _salvandoEdicao=true;
   const {data:l}=await sb.from('lancamentos').select('*').eq('id',eLancId).single();
   const nv={...l.valores};let nT=0;const mud=[];
   camC.forEach(c=>{
@@ -1289,12 +1292,13 @@ async function salvarEdicao(){
     if(c.tipo==='moeda'){const novo=pBRL(el.value);const antes=parseFloat(eOrig.valores?.[c.label])||0;nT+=novo;if(Math.abs(novo-antes)>0.001){nv[c.label]=String(novo);mud.push({campo:c.label,antes:String(antes),depois:String(novo)});}}
     else{const novo=el.value||'ok';const antes=eOrig.valores?.[c.label]||'ok';if(novo!==antes){nv[c.label]=novo;mud.push({campo:c.label,antes,depois:novo});}}
   });
-  if(!mud.length){alert('Nenhum valor foi alterado.');voltarEdit();return;}
+  if(!mud.length){_salvandoEdicao=false;alert('Nenhum valor foi alterado.');voltarEdit();return;}
   const {error}=await sb.from('lancamentos').update({valores:nv,total_dif:nT}).eq('id',eLancId);
   if(error){alert('Erro ao salvar: '+error.message);return;}
   const ts=agr().toISOString();
   const papel=eQuem==='empresa'?'proprietario':eQuem==='filial'?'operador':eQuem==='opmega'?'op_mega':pAt.papel||'operador';
   await sb.from('audit_log').insert(mud.map(m=>({lancamento_id:eLancId,empresa_id:l.empresa_id,filial_id:l.filial_id,mes_ano:l.mes_ano,data_lanc:l.data_lanc,campo_label:m.campo,valor_antes:m.antes,valor_depois:m.depois,editado_por:uAt.id,papel_editor:papel,nome_editor:pAt.nome||papel,editado_em:ts})));
+  _salvandoEdicao=false;
   voltarEdit();
 }
 document.addEventListener('DOMContentLoaded',()=>{const b=document.getElementById('edit-save-btn');if(b)b.onclick=salvarEdicao;});
