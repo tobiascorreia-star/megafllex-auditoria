@@ -114,6 +114,9 @@ tr:hover td:first-child{background:var(--bg2)}
 .rodape{text-align:center;padding:10px 0 4px;font-size:10px;color:var(--txt3);border-top:0.5px solid var(--brd);margin-top:6px}
 .logo-shield{display:inline-flex;align-items:center;justify-content:center}
 .logo-shield svg{display:block}
+.obs-tri{position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 7px 7px 0;border-color:transparent #c0392b transparent transparent;cursor:pointer}
+.cel-com-obs{position:relative}
+.obs-tip{display:none;position:fixed;background:#1a1a18;color:#fff;font-size:11px;padding:6px 10px;border-radius:6px;max-width:220px;z-index:999;white-space:pre-wrap;line-height:1.4;pointer-events:none}
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--brd2);border-top-color:var(--mega-sub);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
@@ -176,7 +179,7 @@ tr:hover td:first-child{background:var(--bg2)}
         <button type="button" onclick="toggleSenha()" id="btn-olho" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer;color:var(--txt2);font-size:16px;padding:0;line-height:1">👁️</button>
       </div></div>
       <button class="btn" style="width:100%;margin-top:4px;padding:11px" onclick="fazerLogin()"><span id="login-txt">Entrar</span></button>
-      <div style="text-align:center;margin-top:14px;font-size:10px;color:var(--txt3)">© 2026 · MegaFllex Soluções · v0.1.4</div>
+      <div style="text-align:center;margin-top:14px;font-size:10px;color:var(--txt3)">© 2026 · MegaFllex Soluções · v0.1.5</div>
     </div>
   </div>
 </div>
@@ -541,6 +544,7 @@ tr:hover td:first-child{background:var(--bg2)}
 </div>
 
 <div id="modal-root"></div>
+<div id="obs-tip" class="obs-tip"></div>
 
 <script>
 const SURL='https://evqvkosqxdowjlbwkuwo.supabase.co';
@@ -984,6 +988,70 @@ async function delEmp(id){
   empC=data||[];renderEmps();renderDash();preSelMega();
 }
 
+
+// ── OBSERVAÇÕES ──────────────────────────────────────────────
+let _obsCache = {}; // lancamento_id -> {campo_label: texto}
+
+function mostrarTip(e, txt){
+  const tip=document.getElementById('obs-tip');
+  tip.textContent=txt;
+  tip.style.display='block';
+  tip.style.left=(e.clientX+12)+'px';
+  tip.style.top=(e.clientY-10)+'px';
+}
+function esconderTip(){
+  const tip=document.getElementById('obs-tip');
+  if(tip)tip.style.display='none';
+}
+
+async function abrirObservacao(lancId, campoLabel, quem){
+  const {data:l}=await sb.from('lancamentos').select('observacoes').eq('id',lancId).single();
+  const obs=(l?.observacoes||{})[campoLabel]||'';
+  const isOpmega=quem==='opmega'||pAt.papel==='op_mega';
+  window._obsLancId=lancId;
+  window._obsCampo=campoLabel;
+  window._obsQuem=quem;
+  abrirModal(
+    '<div class="modal-box" onclick="event.stopPropagation()">'+
+    '<div class="modal-handle"></div>'+
+    '<div class="modal-header"><h3>💬 Observação — '+campoLabel+'</h3>'+
+    '<button onclick="fecharModal()" style="border:none;background:none;cursor:pointer;font-size:18px">×</button></div>'+
+    (isOpmega
+      ?'<div class="irow"><label>Observação</label><textarea id="obs-txt" rows="4" style="resize:vertical;padding:8px 10px;border:0.5px solid var(--brd2);border-radius:var(--r);background:var(--bg);color:var(--txt);font-size:13px;width:100%;font-family:inherit">'+obs+'</textarea></div>'+
+       '<div class="modal-footer">'+
+       '<button class="btn-danger" style="flex:1" onclick="confirmarApagarObs()">🗑️ Apagar</button>'+
+       '<button class="btn" style="flex:1" onclick="confirmarSalvarObs()">💾 Salvar</button>'+
+       '</div>'
+      :'<div class="notice n-mega">'+(obs||'Nenhuma observação registrada.')+'</div>'
+    )+
+    '</div>'
+  );
+}
+async function confirmarSalvarObs(){
+  const txt=document.getElementById('obs-txt')?.value||'';
+  await salvarObservacao(window._obsLancId,window._obsCampo,txt);
+}
+async function confirmarApagarObs(){
+  await salvarObservacao(window._obsLancId,window._obsCampo,'');
+}
+
+async function salvarObservacao(lancId, campoLabel, texto){
+  const {data:l}=await sb.from('lancamentos').select('observacoes').eq('id',lancId).single();
+  const obs={...(l?.observacoes||{})};
+  if(texto.trim()){
+    obs[campoLabel]=texto.trim();
+  } else {
+    delete obs[campoLabel];
+  }
+  await sb.from('lancamentos').update({observacoes:obs}).eq('id',lancId);
+  fecharModal();
+  // Atualizar cache
+  _obsCache[lancId]=obs;
+  // Recarregar a tabela atual
+  if(document.getElementById('m-lanc-body'))mCarregarLanc();
+  if(document.getElementById('om-lanc-body'))omCarregarLanc();
+}
+
 async function buildTable(hEl,bEl,rows,comEdit,quem){
   const nC=camC.length+3+(comEdit?1:0);
   let h='<tr><th style="text-align:left;min-width:65px">Data</th>';
@@ -1010,7 +1078,10 @@ async function buildTable(hEl,bEl,rows,comEdit,quem){
       const ep=cEd[c.label];const ne=nEd[c.label]||'';
       const cc=ep==='proprietario'?'cel-prop':ep==='operador'?'cel-oper':ep==='op_mega'?'cel-mega':ep==='megafllex'?'cel-admin':'';
       const ic=ep?' <span style="font-size:9px" title="Editado por: '+ne+'">✎</span>':'';
-      tds+='<td class="'+(c.tipo==='moeda'?cls(v):'')+' '+cc+'" style="'+(c.tipo==='moeda'&&v<0?'color:#c0392b;font-weight:500':c.tipo==='moeda'&&v>0?'color:#1D9E75;font-weight:500':'')+' " title="'+(ep?'Editado por: '+ne:'')+'">'+fR(v)+ic+'</td>';
+      const obsVal=(l.observacoes||{})[c.label]||'';
+      const triObs=obsVal?'<span class="obs-tri" onmouseenter="mostrarTip(event,'+JSON.stringify(obsVal)+')" onmouseleave="esconderTip()" onclick="abrirObservacao(\''+l.id+'\',\''+c.label+'\',\''+quem+'\');event.stopPropagation()"></span>':'';
+      const addObs=(quem==='mega'||quem==='opmega')?'<span style="font-size:9px;cursor:pointer;color:var(--txt3);margin-left:2px" title="Adicionar observação" onclick="abrirObservacao(\''+l.id+'\',\''+c.label+'\',\''+quem+'\');event.stopPropagation()">💬</span>':'';
+      tds+='<td class="'+(c.tipo==='moeda'?cls(v):'')+' '+cc+(obsVal?' cel-com-obs':'')+('" style="position:relative;'+(c.tipo==='moeda'&&v<0?'color:#c0392b;font-weight:500':c.tipo==='moeda'&&v>0?'color:#1D9E75;font-weight:500':''))+' " title="'+(ep?'Editado por: '+ne:'')+'">'+triObs+fR(v)+ic+addObs+'</td>';
     });
     let st='';
     const temM=Object.values(cEd).some(v=>v==='op_mega');
@@ -1039,7 +1110,7 @@ async function mCarregarLanc(){
   if(!eId||!fId){alert('Selecione empresa e filial');return;}
   document.getElementById('m-lanc-body').innerHTML='<tr><td colspan="10">'+ld('Buscando...')+'</td></tr>';
   const {data}=await sb.from('lancamentos').select('*').eq('filial_id',fId).eq('mes_ano',mes).order('data_lanc');
-  await buildTable(document.getElementById('m-lanc-head'),document.getElementById('m-lanc-body'),data||[],false,'');
+  await buildTable(document.getElementById('m-lanc-head'),document.getElementById('m-lanc-body'),data||[],false,'mega');
 }
 async function renderAuditMega(){
   document.getElementById('m-audit-lista').innerHTML=ld('Carregando...');
@@ -1373,7 +1444,7 @@ async function imprimirRelatorio(origem){
   camC.forEach(c=>{const v=tots[c.label]||0;tRow+='<td style="font-weight:600;color:'+(v>0?'#0a7a4e':v<0?'#c0392b':'inherit')+'">'+(c.tipo==='moeda'?fT(v):'')+'</td>';});
   tRow+='<td style="font-weight:700;color:'+(tg>0?'#0a7a4e':tg<0?'#c0392b':'inherit')+'">'+fT(tg)+'</td><td></td></tr>';
   const th=camC.map(c=>'<th>'+c.label+'</th>').join('');
-  const html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>'+titulo+'</title><style>@page{size:A4 landscape;margin:12mm 10mm}*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{font-size:9px;color:#1a1a18}.cab{display:flex;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #3C3489}.logo{display:flex;align-items:center;gap:8px}.logo-ic{width:36px;height:36px;border-radius:50%;background:#EEEDFE;display:flex;align-items:center;justify-content:center;font-size:18px}.logo-nm{font-size:14px;font-weight:700;color:#3C3489}.logo-sb{font-size:9px;color:#534AB7}.inf{text-align:right;font-size:9px;color:#6b6b67}h2{font-size:12px;font-weight:600;color:#3C3489;margin-bottom:3px}table{width:100%;border-collapse:collapse;font-size:8px}th{background:#EEEDFE;color:#3C3489;padding:4px 5px;text-align:right;border:0.5px solid #AFA9EC;font-weight:600;font-size:7.5px;white-space:nowrap}th:first-child{text-align:left}td{padding:3px 5px;border:0.5px solid #e0e0e0;text-align:right;white-space:nowrap}td.dc{text-align:left;font-weight:500;background:#f9f9f7}.tr td{background:#EEEDFE;font-weight:700;border-top:1.5px solid #3C3489}.leg{display:flex;gap:16px;margin-top:8px;font-size:8px;color:#6b6b67}.li{display:flex;align-items:center;gap:4px}.lb{width:14px;height:10px;border-radius:2px;border:0.5px solid #ccc}.rod{margin-top:8px;padding-top:6px;border-top:1px solid #e0e0e0;font-size:8px;color:#9c9a92;display:flex;justify-content:space-between}</style></head><body><div class="cab"><div><div class="logo"><div class="logo-ic"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0Ij4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZmFjZSIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjAiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMEEyQTVFIj48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iMjAlIiBzdG9wLWNvbG9yPSIjMUM1N0M5Ij48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iNDIlIiBzdG9wLWNvbG9yPSIjNkZBMEVFIj48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iNTAlIiBzdG9wLWNvbG9yPSIjRThGMUZGIj48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iNTglIiBzdG9wLWNvbG9yPSIjNkZBMEVFIj48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iODAlIiBzdG9wLWNvbG9yPSIjMUM1N0M5Ij48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzBBMkE1RSI+PC9zdG9wPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ic2hhZGUiIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIwLjI1Ij48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iNjAlIiBzdG9wLWNvbG9yPSIjMDAwMDAwIiBzdG9wLW9wYWNpdHk9IjAiPjwvc3RvcD4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMDAwMDAwIiBzdG9wLW9wYWNpdHk9IjAuMzUiPjwvc3RvcD4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxwYXRoIGQ9Ik0zMiA0IEw1NiA4IEM1OCA4IDYwIDEwIDYwIDEyIEw2MCAzMCBDNjAgNDYgNDggNTYgMzIgNjIgQzE2IDU2IDQgNDYgNCAzMCBMNCAxMiBDNCAxMCA2IDggOCA4IFoiIGZpbGw9IiMwNDEyMkIiIG9wYWNpdHk9IjAuMyIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCAzKSI+PC9wYXRoPgogIDxwYXRoIGQ9Ik0zMiA0IEw1NiA4IEM1OCA4IDYwIDEwIDYwIDEyIEw2MCAzMCBDNjAgNDYgNDggNTYgMzIgNjIgQzE2IDU2IDQgNDYgNCAzMCBMNCAxMiBDNCAxMCA2IDggOCA4IFoiIGZpbGw9IiMwNDEyMkIiPjwvcGF0aD4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgzMiAzMykgc2NhbGUoMC45MikgdHJhbnNsYXRlKC0zMiAtMzMpIj4KICAgIDxwYXRoIGQ9Ik0zMiA0IEw1NiA4IEM1OCA4IDYwIDEwIDYwIDEyIEw2MCAzMCBDNjAgNDYgNDggNTYgMzIgNjIgQzE2IDU2IDQgNDYgNCAzMCBMNCAxMiBDNCAxMCA2IDggOCA4IFoiIGZpbGw9InVybCgjZmFjZSkiPjwvcGF0aD4KICAgIDxwYXRoIGQ9Ik0zMiA0IEw1NiA4IEM1OCA4IDYwIDEwIDYwIDEyIEw2MCAzMCBDNjAgNDYgNDggNTYgMzIgNjIgQzE2IDU2IDQgNDYgNCAzMCBMNCAxMiBDNCAxMCA2IDggOCA4IFoiIGZpbGw9InVybCgjc2hhZGUpIj48L3BhdGg+CiAgPC9nPgogIDxwYXRoIGQ9Ik0xOCA0NiBMMTggMjIgTDI2IDIyIEwzMiAzMiBMMzggMjIgTDQ2IDIyIEw0NiA0NiBMNDAgNDYgTDQwIDMwIEwzNCA0MCBMMzAgNDAgTDI0IDMwIEwyNCA0NiBaIiBmaWxsPSIjZmZmZmZmIj48L3BhdGg+Cjwvc3ZnPg==" width="36" height="36" style="border-radius:50%"></div><div><div class="logo-nm">MegaFllex Auditoria</div><div class="logo-sb">Sistema de Conciliação Financeira</div></div></div><div style="margin-top:8px"><h2>'+titulo+'</h2><div style="font-size:9px;color:#6b6b67"><strong>Empresa:</strong> '+empN+' &nbsp;|&nbsp; <strong>Filial:</strong> '+filN+' &nbsp;|&nbsp; <strong>Período:</strong> '+mesN+'</div></div></div><div class="inf"><div><strong>Emitido em:</strong> '+dI+' às '+hI+'</div><div style="margin-top:3px"><strong>Total lançamentos:</strong> '+rows.length+'</div><div style="margin-top:3px"><strong>Total diferença:</strong> <span style="color:'+(tg<0?'#c0392b':tg>0?'#0a7a4e':'inherit')+';font-weight:700">'+fT(tg)+'</span></div></div></div><table><thead><tr><th>Data</th>'+th+'<th>Total dif.</th><th>Status</th></tr></thead><tbody>'+linhas+tRow+'</tbody></table><div class="leg"><div class="li"><div class="lb" style="background:#FFF3CD;border-color:#E6A817"></div>Proprietário</div><div class="li"><div class="lb" style="background:#FFD6D6;border-color:#D85A30"></div>Operador</div><div class="li"><div class="lb" style="background:#EAF3DE;border-color:#3B6D11"></div>Ok</div><div class="li"><div class="lb" style="background:#FAECE7;border-color:#993C1D"></div>Diferença</div></div><div class="rod"><span>© 2026 · MegaFllex Soluções · v0.1.4</span><span>Documento gerado automaticamente</span></div></body></html>';
+  const html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>'+titulo+'</title><style>@page{size:A4 landscape;margin:12mm 10mm}*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{font-size:9px;color:#1a1a18}.cab{display:flex;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #3C3489}.logo{display:flex;align-items:center;gap:8px}.logo-ic{width:36px;height:36px;border-radius:50%;background:#EEEDFE;display:flex;align-items:center;justify-content:center;font-size:18px}.logo-nm{font-size:14px;font-weight:700;color:#3C3489}.logo-sb{font-size:9px;color:#534AB7}.inf{text-align:right;font-size:9px;color:#6b6b67}h2{font-size:12px;font-weight:600;color:#3C3489;margin-bottom:3px}table{width:100%;border-collapse:collapse;font-size:8px}th{background:#EEEDFE;color:#3C3489;padding:4px 5px;text-align:right;border:0.5px solid #AFA9EC;font-weight:600;font-size:7.5px;white-space:nowrap}th:first-child{text-align:left}td{padding:3px 5px;border:0.5px solid #e0e0e0;text-align:right;white-space:nowrap}td.dc{text-align:left;font-weight:500;background:#f9f9f7}.tr td{background:#EEEDFE;font-weight:700;border-top:1.5px solid #3C3489}.leg{display:flex;gap:16px;margin-top:8px;font-size:8px;color:#6b6b67}.li{display:flex;align-items:center;gap:4px}.lb{width:14px;height:10px;border-radius:2px;border:0.5px solid #ccc}.rod{margin-top:8px;padding-top:6px;border-top:1px solid #e0e0e0;font-size:8px;color:#9c9a92;display:flex;justify-content:space-between}</style></head><body><div class="cab"><div><div class="logo"><div class="logo-ic"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0Ij4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZmFjZSIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjAiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMEEyQTVFIj48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iMjAlIiBzdG9wLWNvbG9yPSIjMUM1N0M5Ij48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iNDIlIiBzdG9wLWNvbG9yPSIjNkZBMEVFIj48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iNTAlIiBzdG9wLWNvbG9yPSIjRThGMUZGIj48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iNTglIiBzdG9wLWNvbG9yPSIjNkZBMEVFIj48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iODAlIiBzdG9wLWNvbG9yPSIjMUM1N0M5Ij48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzBBMkE1RSI+PC9zdG9wPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ic2hhZGUiIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIgc3RvcC1vcGFjaXR5PSIwLjI1Ij48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iNjAlIiBzdG9wLWNvbG9yPSIjMDAwMDAwIiBzdG9wLW9wYWNpdHk9IjAiPjwvc3RvcD4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMDAwMDAwIiBzdG9wLW9wYWNpdHk9IjAuMzUiPjwvc3RvcD4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxwYXRoIGQ9Ik0zMiA0IEw1NiA4IEM1OCA4IDYwIDEwIDYwIDEyIEw2MCAzMCBDNjAgNDYgNDggNTYgMzIgNjIgQzE2IDU2IDQgNDYgNCAzMCBMNCAxMiBDNCAxMCA2IDggOCA4IFoiIGZpbGw9IiMwNDEyMkIiIG9wYWNpdHk9IjAuMyIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCAzKSI+PC9wYXRoPgogIDxwYXRoIGQ9Ik0zMiA0IEw1NiA4IEM1OCA4IDYwIDEwIDYwIDEyIEw2MCAzMCBDNjAgNDYgNDggNTYgMzIgNjIgQzE2IDU2IDQgNDYgNCAzMCBMNCAxMiBDNCAxMCA2IDggOCA4IFoiIGZpbGw9IiMwNDEyMkIiPjwvcGF0aD4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgzMiAzMykgc2NhbGUoMC45MikgdHJhbnNsYXRlKC0zMiAtMzMpIj4KICAgIDxwYXRoIGQ9Ik0zMiA0IEw1NiA4IEM1OCA4IDYwIDEwIDYwIDEyIEw2MCAzMCBDNjAgNDYgNDggNTYgMzIgNjIgQzE2IDU2IDQgNDYgNCAzMCBMNCAxMiBDNCAxMCA2IDggOCA4IFoiIGZpbGw9InVybCgjZmFjZSkiPjwvcGF0aD4KICAgIDxwYXRoIGQ9Ik0zMiA0IEw1NiA4IEM1OCA4IDYwIDEwIDYwIDEyIEw2MCAzMCBDNjAgNDYgNDggNTYgMzIgNjIgQzE2IDU2IDQgNDYgNCAzMCBMNCAxMiBDNCAxMCA2IDggOCA4IFoiIGZpbGw9InVybCgjc2hhZGUpIj48L3BhdGg+CiAgPC9nPgogIDxwYXRoIGQ9Ik0xOCA0NiBMMTggMjIgTDI2IDIyIEwzMiAzMiBMMzggMjIgTDQ2IDIyIEw0NiA0NiBMNDAgNDYgTDQwIDMwIEwzNCA0MCBMMzAgNDAgTDI0IDMwIEwyNCA0NiBaIiBmaWxsPSIjZmZmZmZmIj48L3BhdGg+Cjwvc3ZnPg==" width="36" height="36" style="border-radius:50%"></div><div><div class="logo-nm">MegaFllex Auditoria</div><div class="logo-sb">Sistema de Conciliação Financeira</div></div></div><div style="margin-top:8px"><h2>'+titulo+'</h2><div style="font-size:9px;color:#6b6b67"><strong>Empresa:</strong> '+empN+' &nbsp;|&nbsp; <strong>Filial:</strong> '+filN+' &nbsp;|&nbsp; <strong>Período:</strong> '+mesN+'</div></div></div><div class="inf"><div><strong>Emitido em:</strong> '+dI+' às '+hI+'</div><div style="margin-top:3px"><strong>Total lançamentos:</strong> '+rows.length+'</div><div style="margin-top:3px"><strong>Total diferença:</strong> <span style="color:'+(tg<0?'#c0392b':tg>0?'#0a7a4e':'inherit')+';font-weight:700">'+fT(tg)+'</span></div></div></div><table><thead><tr><th>Data</th>'+th+'<th>Total dif.</th><th>Status</th></tr></thead><tbody>'+linhas+tRow+'</tbody></table><div class="leg"><div class="li"><div class="lb" style="background:#FFF3CD;border-color:#E6A817"></div>Proprietário</div><div class="li"><div class="lb" style="background:#FFD6D6;border-color:#D85A30"></div>Operador</div><div class="li"><div class="lb" style="background:#EAF3DE;border-color:#3B6D11"></div>Ok</div><div class="li"><div class="lb" style="background:#FAECE7;border-color:#993C1D"></div>Diferença</div></div><div class="rod"><span>© 2026 · MegaFllex Soluções · v0.1.5</span><span>Documento gerado automaticamente</span></div></body></html>';
   const w=window.open('','_blank','width=1200,height=800');w.document.write(html);w.document.close();w.onload=()=>w.print();
 }
 
@@ -1419,6 +1490,12 @@ window.salvarCampo = salvarCampo;
 window.adicionarCampo = adicionarCampo;
 window.confirmarDelCampo = confirmarDelCampo;
 window.confirmarDelEmp = confirmarDelEmp;
+window.abrirObservacao = abrirObservacao;
+window.confirmarSalvarObs = confirmarSalvarObs;
+window.confirmarApagarObs = confirmarApagarObs;
+window.salvarObservacao = salvarObservacao;
+window.mostrarTip = mostrarTip;
+window.esconderTip = esconderTip;
 window.delEmp = delEmp;
 window.delCampo = delCampo;
 window.fecharModal = fecharModal;
