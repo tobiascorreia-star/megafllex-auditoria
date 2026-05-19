@@ -1047,9 +1047,31 @@ async function salvarObservacao(lancId, campoLabel, texto){
   fecharModal();
   // Atualizar cache
   _obsCache[lancId]=obs;
-  // Recarregar a tabela atual
-  if(document.getElementById('m-lanc-body'))mCarregarLanc();
-  if(document.getElementById('om-lanc-body'))omCarregarLanc();
+  // Recarregar sem verificar seleção - buscar direto pelo lancamento
+  const bEl=document.getElementById('m-lanc-body')||document.getElementById('om-lanc-body');
+  const hEl=document.getElementById('m-lanc-head')||document.getElementById('om-lanc-head');
+  if(bEl&&bEl.querySelector('tr')){
+    // Atualizar triângulo/tooltip direto no DOM sem recarregar tudo
+    const tds=bEl.querySelectorAll('td[data-lanc-id="'+lancId+'"][data-campo="'+campoLabel+'"]');
+    tds.forEach(td=>{
+      const tri=td.querySelector('.obs-tri');
+      if(texto.trim()){
+        if(!tri){
+          const t=document.createElement('span');
+          t.className='obs-tri';
+          t.onmouseenter=(e)=>mostrarTip(e,texto.trim());
+          t.onmouseleave=esconderTip;
+          td.insertBefore(t,td.firstChild);
+          td.classList.add('cel-com-obs');
+        } else {
+          tri.onmouseenter=(e)=>mostrarTip(e,texto.trim());
+        }
+      } else {
+        if(tri)tri.remove();
+        td.classList.remove('cel-com-obs');
+      }
+    });
+  }
 }
 
 async function buildTable(hEl,bEl,rows,comEdit,quem){
@@ -1079,9 +1101,9 @@ async function buildTable(hEl,bEl,rows,comEdit,quem){
       const cc=ep==='proprietario'?'cel-prop':ep==='operador'?'cel-oper':ep==='op_mega'?'cel-mega':ep==='megafllex'?'cel-admin':'';
       const ic=ep?' <span style="font-size:9px" title="Editado por: '+ne+'">✎</span>':'';
       const obsVal=(l.observacoes||{})[c.label]||'';
-      const triObs=obsVal?'<span class="obs-tri" onmouseenter="mostrarTip(event,'+JSON.stringify(obsVal)+')" onmouseleave="esconderTip()" onclick="abrirObservacao(\''+l.id+'\',\''+c.label+'\',\''+quem+'\');event.stopPropagation()"></span>':'';
+      const triObs=obsVal?'<span class="obs-tri" onmouseenter="mostrarTip(event,'+JSON.stringify(obsVal)+')" onmouseleave="esconderTip()"></span>':'';
       const addObs=(quem==='mega'||quem==='opmega')?'<span style="font-size:9px;cursor:pointer;color:var(--txt3);margin-left:2px" title="Adicionar observação" onclick="abrirObservacao(\''+l.id+'\',\''+c.label+'\',\''+quem+'\');event.stopPropagation()">💬</span>':'';
-      tds+='<td class="'+(c.tipo==='moeda'?cls(v):'')+' '+cc+(obsVal?' cel-com-obs':'')+('" style="position:relative;'+(c.tipo==='moeda'&&v<0?'color:#c0392b;font-weight:500':c.tipo==='moeda'&&v>0?'color:#1D9E75;font-weight:500':''))+' " title="'+(ep?'Editado por: '+ne:'')+'">'+triObs+fR(v)+ic+addObs+'</td>';
+      tds+='<td class="'+(c.tipo==='moeda'?cls(v):'')+' '+cc+(obsVal?' cel-com-obs':'')+('" data-lanc-id="'+l.id+'" data-campo="'+c.label+'" style="position:relative;'+(c.tipo==='moeda'&&v<0?'color:#c0392b;font-weight:500':c.tipo==='moeda'&&v>0?'color:#1D9E75;font-weight:500':''))+' " title="'+(ep?'Editado por: '+ne:'')+'">'+triObs+fR(v)+ic+addObs+'</td>';
     });
     let st='';
     const temM=Object.values(cEd).some(v=>v==='op_mega');
