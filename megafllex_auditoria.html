@@ -1016,7 +1016,7 @@ async function buildTable(hEl,bEl,rows,comEdit,quem){
     const temM=Object.values(cEd).some(v=>v==='op_mega');
     const temA=Object.values(cEd).some(v=>v==='megafllex');
     if(temP)st+='<span class="badge b-prop">✎ prop.</span> ';
-    if(temO)st+='<span class="badge b-oper">✎ oper.</span> ';
+    if(temO&&!temM)st+='<span class="badge b-oper">✎ oper.</span> ';
     if(temM)st+='<span class="badge" style="background:#EEEDFE;color:#3C3489;border:0.5px solid #AFA9EC">✎ op-mega</span> ';
     if(temA)st+='<span class="badge" style="background:#D8EBFF;color:#185FA5;border:0.5px solid #5B9BD5">✎ admin</span>';
     if(!temP&&!temO&&!temM&&!temA)st=Math.abs(tot)<0.5?'<span class="badge b-ok">ok</span>':'<span class="badge b-diff">dif.</span>';
