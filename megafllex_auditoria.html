@@ -1052,31 +1052,12 @@ async function salvarObservacao(lancId, campoLabel, texto){
   fecharModal();
   // Atualizar cache
   _obsCache[lancId]=obs;
-  // Recarregar sem verificar seleção - buscar direto pelo lancamento
-  const bEl=document.getElementById('m-lanc-body')||document.getElementById('om-lanc-body');
-  const hEl=document.getElementById('m-lanc-head')||document.getElementById('om-lanc-head');
-  if(bEl&&bEl.querySelector('tr')){
-    // Atualizar triângulo/tooltip direto no DOM sem recarregar tudo
-    const tds=bEl.querySelectorAll('td[data-lanc-id="'+lancId+'"][data-campo="'+campoLabel+'"]');
-    tds.forEach(td=>{
-      const tri=td.querySelector('.obs-tri');
-      if(texto.trim()){
-        if(!tri){
-          const t=document.createElement('span');
-          t.className='obs-tri';
-          t.onmouseenter=(e)=>mostrarTip(e,texto.trim());
-          t.onmouseleave=esconderTip;
-          td.insertBefore(t,td.firstChild);
-          td.classList.add('cel-com-obs');
-        } else {
-          tri.onmouseenter=(e)=>mostrarTip(e,texto.trim());
-        }
-      } else {
-        if(tri)tri.remove();
-        td.classList.remove('cel-com-obs');
-      }
-    });
-  }
+  // Recarregar a tabela para atualizar os triângulos
+  try{
+    if(document.getElementById('s-opmega')?.classList.contains('active'))await omCarregarLanc();
+    else if(document.getElementById('s-mega')?.classList.contains('active'))await mCarregarLanc();
+    else if(document.getElementById('s-empresa')?.classList.contains('active'))await eCarregarLanc();
+  }catch(e){}
 }
 
 async function buildTable(hEl,bEl,rows,comEdit,quem){
