@@ -999,6 +999,9 @@ function mostrarTip(e, txt){
   tip.style.left=(e.clientX+12)+'px';
   tip.style.top=(e.clientY-10)+'px';
 }
+function mostrarTipEl(e, el){
+  mostrarTip(e, el.getAttribute('data-obs')||'');
+}
 function esconderTip(){
   const tip=document.getElementById('obs-tip');
   if(tip)tip.style.display='none';
@@ -1036,6 +1039,7 @@ async function confirmarApagarObs(){
 }
 
 async function salvarObservacao(lancId, campoLabel, texto){
+  texto=texto||'';
   const {data:l}=await sb.from('lancamentos').select('observacoes').eq('id',lancId).single();
   const obs={...(l?.observacoes||{})};
   if(texto.trim()){
@@ -1043,7 +1047,8 @@ async function salvarObservacao(lancId, campoLabel, texto){
   } else {
     delete obs[campoLabel];
   }
-  await sb.from('lancamentos').update({observacoes:obs}).eq('id',lancId);
+  const {error:obsErr}=await sb.from('lancamentos').update({observacoes:obs}).eq('id',lancId);
+  if(obsErr){alert('Erro ao salvar observação: '+obsErr.message);return;}
   fecharModal();
   // Atualizar cache
   _obsCache[lancId]=obs;
@@ -1101,7 +1106,7 @@ async function buildTable(hEl,bEl,rows,comEdit,quem){
       const cc=ep==='proprietario'?'cel-prop':ep==='operador'?'cel-oper':ep==='op_mega'?'cel-mega':ep==='megafllex'?'cel-admin':'';
       const ic=ep?' <span style="font-size:9px" title="Editado por: '+ne+'">✎</span>':'';
       const obsVal=(l.observacoes||{})[c.label]||'';
-      const triObs=obsVal?'<span class="obs-tri" onmouseenter="mostrarTip(event,'+JSON.stringify(obsVal)+')" onmouseleave="esconderTip()"></span>':'';
+      const triObs=obsVal?'<span class="obs-tri" data-obs="'+obsVal.replace(/"/g,"&quot;").replace(/'/g,"&#39;")+'" onmouseenter="mostrarTipEl(event,this)" onmouseleave="esconderTip()"></span>':'';
       const addObs=(quem==='mega'||quem==='opmega')?'<span style="font-size:9px;cursor:pointer;color:var(--txt3);margin-left:2px" title="Adicionar observação" onclick="abrirObservacao(\''+l.id+'\',\''+c.label+'\',\''+quem+'\');event.stopPropagation()">💬</span>':'';
       tds+='<td class="'+(c.tipo==='moeda'?cls(v):'')+' '+cc+(obsVal?' cel-com-obs':'')+('" data-lanc-id="'+l.id+'" data-campo="'+c.label+'" style="position:relative;'+(c.tipo==='moeda'&&v<0?'color:#c0392b;font-weight:500':c.tipo==='moeda'&&v>0?'color:#1D9E75;font-weight:500':''))+' " title="'+(ep?'Editado por: '+ne:'')+'">'+triObs+fR(v)+ic+addObs+'</td>';
     });
@@ -1517,6 +1522,7 @@ window.confirmarSalvarObs = confirmarSalvarObs;
 window.confirmarApagarObs = confirmarApagarObs;
 window.salvarObservacao = salvarObservacao;
 window.mostrarTip = mostrarTip;
+window.mostrarTipEl = mostrarTipEl;
 window.esconderTip = esconderTip;
 window.delEmp = delEmp;
 window.delCampo = delCampo;
