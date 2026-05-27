@@ -328,6 +328,29 @@ tr:hover td:first-child{background:var(--bg2)}
         <div id="bk-fb" style="margin-top:10px;font-size:12px;display:none"></div>
         <div class="sect" style="margin-top:16px">Histórico desta sessão</div>
         <div id="bk-historico" style="font-size:12px;color:var(--txt2)">Nenhum backup realizado nesta sessão.</div>
+
+        <div style="border-top:0.5px solid var(--brd);margin-top:18px;padding-top:14px">
+          <div class="sect" style="margin-top:0">Importar backup JSON</div>
+          <div class="notice n-warn" style="margin-bottom:10px">⚠️ A importação usa <strong>upsert</strong> — registros existentes com mesmo ID serão <strong>atualizados</strong>. Não apaga dados extras.</div>
+          <label style="display:flex;align-items:center;gap:10px;padding:12px;border:1.5px dashed var(--brd2);border-radius:var(--r);cursor:pointer;background:var(--bg2);margin-bottom:10px">
+            <span style="font-size:22px">📂</span>
+            <div>
+              <div style="font-size:13px;font-weight:500">Selecionar arquivo JSON</div>
+              <div style="font-size:11px;color:var(--txt3)" id="bk-imp-nome">Nenhum arquivo selecionado</div>
+            </div>
+            <input type="file" id="bk-imp-file" accept=".json" style="display:none" onchange="bkLerArquivo()">
+          </label>
+          <div id="bk-imp-preview" style="display:none;margin-bottom:10px">
+            <div class="sect" style="margin-top:0;margin-bottom:6px">Conteúdo do arquivo</div>
+            <div id="bk-imp-tabelas" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px"></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn" onclick="bkImportar()" style="flex:1;min-width:160px;padding:11px;background:#c0392b;color:#fff;border-color:#a93226">⬆️ Importar selecionadas</button>
+              <button class="btn" onclick="bkCancelarImp()" style="padding:11px 14px">✕ Cancelar</button>
+            </div>
+          </div>
+          <div id="bk-imp-prog" style="display:none;margin-bottom:6px"></div>
+          <div id="bk-imp-fb" style="font-size:12px;display:none;margin-top:6px"></div>
+        </div>
       </div>
       <div id="m-campos" style="display:none">
         <div class="notice n-mega">Somente a MegaFllex pode adicionar ou remover campos.</div>
@@ -530,7 +553,10 @@ tr:hover td:first-child{background:var(--bg2)}
         </div>
         <div class="tbl-wrap"><table><thead id="om-lanc-head"></thead><tbody id="om-lanc-body"></tbody></table></div>
         <div id="om-area-lancar" style="margin-top:10px;display:none">
-          <div class="sect">Lançar novo dia</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <div class="sect" style="margin:0">Lançar novo dia</div>
+            <button class="btn" style="font-size:11px;padding:5px 12px;background:var(--mega);color:var(--mega-txt);border-color:var(--mega-brd)" onclick="omSalvarLanc()">💾 Salvar</button>
+          </div>
           <div class="notice n-oper">Lançamentos como <strong>Operador MegaFllex</strong> — registrados na auditoria.</div>
           <div class="irow"><label>Data</label><input type="date" id="om-data" onchange="omPreencherData()"></div>
           <div id="om-data-fb" style="display:none;align-items:center;gap:6px;padding:7px 10px;border-radius:var(--r);background:#E6F1FB;color:#185FA5;font-size:11px;margin-bottom:4px">📋 <strong>Lançamento existente carregado</strong> — edite e salve para atualizar.</div>
@@ -868,8 +894,8 @@ async function omSalvarLanc(){
   camC.forEach(c=>{const el=document.getElementById('om-fl-'+c.id);if(!el)return;const v=c.tipo==='moeda'?pBRL(el.value):(el.value||'ok');valores[c.label]=String(v);if(c.tipo==='moeda')total+=parseFloat(v)||0;});
   const {error}=await sb.from('lancamentos').upsert({empresa_id:eId,filial_id:fId,mes_ano:mesAno,data_lanc:dv,valores,total_dif:total,criado_por:uAt.id},{onConflict:'filial_id,data_lanc'});
   if(error){alert('Erro: '+error.message);return;}
-  camC.forEach(c=>{const el=document.getElementById('om-fl-'+c.id);if(el)el.value='';});
   const fb=document.getElementById('om-fb');fb.style.display='block';setTimeout(()=>fb.style.display='none',2500);
+  await omCarregarLanc();
 }
 function omTab(t,btn){
   document.querySelectorAll('#s-opmega .tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
@@ -1057,6 +1083,7 @@ async function salvarLanc(){
   if(error){_salvandoEdicao=false;alert('Erro ao salvar: '+error.message);return;}
   camC.forEach(c=>{const el=document.getElementById('fl-'+c.id);if(el)el.value='';});
   const fb=document.getElementById('f-fb');fb.style.display='block';setTimeout(()=>fb.style.display='none',2500);
+  fCarregarHist();
 }
 async function fCarregarHist(){
   const mes=document.getElementById('f-sel-mes').value;
@@ -1680,6 +1707,131 @@ async function executarBackup(){
     if(btn){btn.disabled=false;btn.innerHTML='⬇️ Baixar backup';}
   }
 }
+
+// ── IMPORTAÇÃO DE BACKUP ──────────────────────────────────────────────────
+let bkDadosImp = null;
+
+function bkLerArquivo(){
+  const file = document.getElementById('bk-imp-file').files[0];
+  if(!file) return;
+  document.getElementById('bk-imp-nome').textContent = file.name;
+  document.getElementById('bk-imp-fb').style.display = 'none';
+  document.getElementById('bk-imp-prog').style.display = 'none';
+  const reader = new FileReader();
+  reader.onload = e => {
+    try{
+      const json = JSON.parse(e.target.result);
+      if(!json.tabelas) throw new Error('Arquivo inválido: campo "tabelas" não encontrado.');
+      bkDadosImp = json;
+      const tabelasEl = document.getElementById('bk-imp-tabelas');
+      tabelasEl.innerHTML = Object.entries(json.tabelas).map(([k,v])=>{
+        const info = BK_TABELAS.find(t=>t.id===k);
+        const label = info ? info.label : k;
+        return '<label style="display:flex;align-items:center;gap:8px;padding:9px 12px;border:0.5px solid var(--brd);border-radius:var(--r);background:var(--bg);cursor:pointer">'+
+          '<input type="checkbox" class="bk-imp-sel" data-tabela="'+k+'" checked style="width:14px;height:14px">'+
+          '<span style="font-size:12px">'+label+'</span>'+
+          '<span style="margin-left:auto;font-size:10px;color:var(--txt3)">'+v.length+' reg.</span></label>';
+      }).join('');
+      // Mostrar metadados do arquivo
+      const meta = json.gerado_em ? '<div style="font-size:11px;color:var(--txt2);margin-bottom:8px">📅 Gerado em: <strong>'+json.gerado_em+'</strong> · versão <strong>'+(json.versao||'?')+'</strong></div>' : '';
+      document.getElementById('bk-imp-tabelas').insertAdjacentHTML('beforebegin', meta);
+      document.getElementById('bk-imp-preview').style.display = 'block';
+    }catch(err){
+      bkDadosImp = null;
+      const fb = document.getElementById('bk-imp-fb');
+      fb.style.display = 'block'; fb.style.color = 'var(--neg)';
+      fb.textContent = '❌ ' + err.message;
+    }
+  };
+  reader.readAsText(file);
+}
+
+function bkCancelarImp(){
+  bkDadosImp = null;
+  document.getElementById('bk-imp-file').value = '';
+  document.getElementById('bk-imp-nome').textContent = 'Nenhum arquivo selecionado';
+  document.getElementById('bk-imp-preview').style.display = 'none';
+  document.getElementById('bk-imp-prog').style.display = 'none';
+  document.getElementById('bk-imp-fb').style.display = 'none';
+}
+
+async function bkImportar(){
+  if(!bkDadosImp) return;
+  const selecionadas = [...document.querySelectorAll('.bk-imp-sel:checked')].map(el=>el.dataset.tabela);
+  if(!selecionadas.length){
+    const fb = document.getElementById('bk-imp-fb');
+    fb.style.display='block'; fb.style.color='var(--neg)'; fb.textContent='Selecione ao menos uma tabela.'; return;
+  }
+  // Confirmação
+  if(!confirm('Importar '+selecionadas.length+' tabela(s)? Registros com mesmo ID serão atualizados.')) return;
+
+  const progEl = document.getElementById('bk-imp-prog');
+  const fbEl = document.getElementById('bk-imp-fb');
+  progEl.style.display = 'block'; fbEl.style.display = 'none';
+
+  // Desabilitar botão
+  const btn = document.querySelector('#bk-imp-preview .btn');
+  if(btn){ btn.disabled=true; btn.textContent='Importando...'; }
+
+  let totalOk=0, totalErro=0;
+  const resultados = [];
+
+  // Ordem segura de importação (dependências primeiro)
+  const ORDEM = ['campos','empresas','filiais','perfis','lancamentos','audit_log'];
+  const ordenadas = ORDEM.filter(t=>selecionadas.includes(t))
+    .concat(selecionadas.filter(t=>!ORDEM.includes(t)));
+
+  for(const tabela of ordenadas){
+    const rows = bkDadosImp.tabelas[tabela];
+    if(!rows || !rows.length){
+      resultados.push({tabela, ok:0, erro:0, msg:'Vazio'});
+      progEl.innerHTML = bkProgHTML(resultados);
+      continue;
+    }
+    progEl.innerHTML = bkProgHTML(resultados, tabela);
+    // Upsert em lotes de 500
+    const LOTE = 500;
+    let ok=0, erros=[];
+    for(let i=0; i<rows.length; i+=LOTE){
+      const lote = rows.slice(i, i+LOTE);
+      const {error} = await sb.from(tabela).upsert(lote, {onConflict:'id'});
+      if(error){ erros.push(error.message); }
+      else { ok += lote.length; }
+    }
+    totalOk += ok; totalErro += erros.length;
+    resultados.push({tabela, ok, erro:erros.length, msg: erros[0]||null});
+    progEl.innerHTML = bkProgHTML(resultados);
+  }
+
+  if(btn){ btn.disabled=false; btn.textContent='⬆️ Importar selecionadas'; }
+  fbEl.style.display='block';
+  fbEl.style.color = totalErro===0 ? 'var(--pos)' : 'var(--neg)';
+  fbEl.textContent = totalErro===0
+    ? '✅ Importação concluída — '+totalOk+' registros restaurados.'
+    : '⚠️ Concluído com erros em '+totalErro+' lote(s). Verifique acima.';
+
+  // Atualizar contagens
+  renderBackup();
+}
+
+function bkProgHTML(resultados, emAndamento){
+  const linhas = resultados.map(r=>{
+    const info = BK_TABELAS.find(t=>t.id===r.tabela);
+    const label = info ? info.label : r.tabela;
+    const ico = r.erro>0 ? '❌' : '✅';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--brd);font-size:12px">'+
+      '<span>'+ico+'</span><span style="flex:1">'+label+'</span>'+
+      '<span style="color:var(--pos)">'+r.ok+' ok</span>'+
+      (r.erro>0?'<span style="color:var(--neg);margin-left:6px">'+r.erro+' erro</span>':'')+
+      '</div>';
+  });
+  if(emAndamento){
+    const info = BK_TABELAS.find(t=>t.id===emAndamento);
+    linhas.push('<div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px">'+
+      '<span class="spinner"></span><span>'+(info?info.label:emAndamento)+'</span><span style="color:var(--txt3);margin-left:auto">importando...</span></div>');
+  }
+  return '<div style="border:0.5px solid var(--brd);border-radius:var(--r);padding:8px 12px;background:var(--bg2)">'+linhas.join('')+'</div>';
+}
 // EXPOR FUNÇÕES GLOBALMENTE (garantia)
 window.toggleZeros = toggleZeros;
 window.imprimirRelatorio = imprimirRelatorio;
@@ -1705,6 +1857,9 @@ window.mostrarSeletorFilial = mostrarSeletorFilial;
 window.mTab = mTab;
 window.renderBackup = renderBackup;
 window.executarBackup = executarBackup;
+window.bkLerArquivo = bkLerArquivo;
+window.bkImportar = bkImportar;
+window.bkCancelarImp = bkCancelarImp;
 window.omTab = omTab;
 window.mAtualizaFiliais = mAtualizaFiliais;
 window.omAtualizaFiliais = omAtualizaFiliais;
