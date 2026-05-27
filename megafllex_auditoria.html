@@ -622,6 +622,15 @@ function mBRL(el){
     el.value=(n?'-':'')+(parseInt(d)/100).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
     aplicarCor();
   });
+  // Sinal negativo no final: "1,00-" → "-1,00"
+  el.addEventListener('blur',()=>{
+    const raw=el.value.trim();
+    if(raw.endsWith('-')&&raw.length>1){
+      const semSinal=raw.slice(0,-1).replace(/^-/,'');
+      const d=semSinal.replace(/\D/g,'');
+      if(d){const neg=-(parseInt(d)/100);el.value=fBRL(neg);aplicarCor();}
+    }
+  });
   // Aplicar cor imediatamente ao valor já carregado
   aplicarCor();
   return aplicarCor;
